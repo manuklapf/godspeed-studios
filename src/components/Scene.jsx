@@ -92,16 +92,16 @@ export default function Scene({ scrollProgress }) {
   return (
     <>
       {/* ── Background & Fog ──────────────────────────────────── */}
-      <color attach="background" args={['#bbd8ee']} />
-      <fog attach="fog" args={['#cce8f4', 40, 180]} />
+      <color attach="background" args={['#a3c8de']} />
+      <fog attach="fog" args={['#b8d8ea', 50, 160]} />
 
       {/* ── Lighting ─────────────────────────────────────────── */}
-      <ambientLight intensity={0.55} color="#d8eeff" />
+      <ambientLight intensity={0.35} color="#d8eeff" />
 
       {/* Key light — sunlight from above-right */}
       <directionalLight
         position={[8, 30, 10]}
-        intensity={1.8}
+        intensity={1.1}
         color="#ffffff"
         castShadow={false}
       />
@@ -109,7 +109,7 @@ export default function Scene({ scrollProgress }) {
       {/* Fill light — cool blue from left */}
       <directionalLight
         position={[-10, 15, -8]}
-        intensity={0.6}
+        intensity={0.38}
         color="#c0d8ff"
       />
 
@@ -117,14 +117,14 @@ export default function Scene({ scrollProgress }) {
       <hemisphereLight
         skyColor="#d0eeff"
         groundColor="#a8d8a8"
-        intensity={0.5}
+        intensity={0.32}
       />
 
       {/* Glowing point lights along the stalk */}
-      <pointLight position={[1, 10, 1]} intensity={1.2} color="#b0ffcc" distance={22} decay={2} />
-      <pointLight position={[-1, 25, 1]} intensity={1.0} color="#c8f0ff" distance={22} decay={2} />
-      <pointLight position={[1, 42, -1]} intensity={1.0} color="#e0d8ff" distance={22} decay={2} />
-      <pointLight position={[0, 60, 0]} intensity={1.4} color="#fff8c0" distance={30} decay={2} />
+      <pointLight position={[1, 10, 1]} intensity={0.7} color="#b0ffcc" distance={22} decay={2} />
+      <pointLight position={[-1, 25, 1]} intensity={0.6} color="#c8f0ff" distance={22} decay={2} />
+      <pointLight position={[1, 42, -1]} intensity={0.6} color="#e0d8ff" distance={22} decay={2} />
+      <pointLight position={[0, 60, 0]} intensity={0.8} color="#fff8c0" distance={30} decay={2} />
 
       {/* ── Camera driver ─────────────────────────────────────── */}
       <ScrollCamera scrollProgress={scrollProgress} />
@@ -161,7 +161,7 @@ export default function Scene({ scrollProgress }) {
       <CloudPuff position={[-12, 70, 4]} scale={1.0} />
 
       {/* ── Environment map (for glass/transmission realism) ──── */}
-      <Environment preset="dawn" />
+      <Environment preset="dawn" environmentIntensity={0.6} />
 
       {/* ── Post-processing ──────────────────────────────────── */}
       <Effects />

@@ -25,11 +25,11 @@ export default function Effects() {
         - intensity: 1.4 for a strong but not overwhelming glow
       */}
       <Bloom
-        intensity={1.4}
-        luminanceThreshold={0.12}
-        luminanceSmoothing={0.88}
+        intensity={0.85}
+        luminanceThreshold={0.32}
+        luminanceSmoothing={0.75}
         mipmapBlur
-        radius={0.8}
+        radius={0.65}
       />
 
       {/*

@@ -73,6 +73,60 @@ function makeDropletTexture(data) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   Placeholder image texture shown on hover
+   ────────────────────────────────────────────────────────────── */
+function makeHoverPlaceholder(data) {
+  const SIZE = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = SIZE
+  canvas.height = SIZE
+  const ctx = canvas.getContext('2d')
+
+  // Frosted glass background
+  const grad = ctx.createLinearGradient(0, 0, SIZE, SIZE)
+  grad.addColorStop(0, (data.colorA || '#a8e6cf') + 'cc')
+  grad.addColorStop(1, (data.colorB || '#3d8050') + '88')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, SIZE, SIZE)
+
+  // Rounded image frame
+  ctx.fillStyle = 'rgba(230,245,238,0.55)'
+  ctx.beginPath()
+  if (ctx.roundRect) ctx.roundRect(20, 20, SIZE - 40, SIZE - 40, 20)
+  else ctx.rect(20, 20, SIZE - 40, SIZE - 40)
+  ctx.fill()
+
+  // Mountain / image icon
+  const cx = SIZE / 2
+  const cy = SIZE / 2
+  // Sky circle
+  ctx.fillStyle = 'rgba(120,190,160,0.5)'
+  ctx.beginPath()
+  ctx.arc(cx - 20, cy - 22, 18, 0, Math.PI * 2)
+  ctx.fill()
+  // Mountain silhouette
+  ctx.fillStyle = 'rgba(60,120,80,0.6)'
+  ctx.beginPath()
+  ctx.moveTo(SIZE * 0.12, cy + 30)
+  ctx.lineTo(cx - 12, cy - 20)
+  ctx.lineTo(cx + 10, cy + 5)
+  ctx.lineTo(cx + 22, cy - 12)
+  ctx.lineTo(SIZE * 0.88, cy + 30)
+  ctx.closePath()
+  ctx.fill()
+  // Snow cap
+  ctx.fillStyle = 'rgba(255,255,255,0.8)'
+  ctx.beginPath()
+  ctx.moveTo(cx - 12, cy - 20)
+  ctx.lineTo(cx - 23, cy - 5)
+  ctx.lineTo(cx - 1, cy - 5)
+  ctx.closePath()
+  ctx.fill()
+
+  return new THREE.CanvasTexture(canvas)
+}
+
+/* ──────────────────────────────────────────────────────────────
    InfoCard — HTML overlay rendered via drei's Html portal
    ────────────────────────────────────────────────────────────── */
 function InfoCard({ data, onClose }) {
@@ -107,14 +161,24 @@ function InfoCard({ data, onClose }) {
    ────────────────────────────────────────────────────────────── */
 export default function WaterDroplet({ data }) {
   const outerRef = useRef()
+  const geoRef = useRef()
   const groupRef = useRef()
+  const contentRef = useRef()
+  const hoverImageRef = useRef()
+  const tmpVec = useRef(new THREE.Vector3())
+  const projVec = useRef(new THREE.Vector3())
   const [hovered, setHovered] = useState(false)
   const [open, setOpen] = useState(false)
 
-  // Canvas texture for inner image plane
   const texture = useMemo(() => makeDropletTexture(data), [data])
+  const hoverTexture = useMemo(() => makeHoverPlaceholder(data), [data])
 
-  // World position from stalk + lateral offset
+  // Store original sphere vertex positions for blob deformation
+  const origPositions = useMemo(() => {
+    const geo = new THREE.SphereGeometry(1.3, 28, 22)
+    return new Float32Array(geo.attributes.position.array)
+  }, [])
+
   const basePos = useMemo(() => {
     const sp = getStalkPosition(data.stalkT)
     return new THREE.Vector3(
@@ -124,21 +188,88 @@ export default function WaterDroplet({ data }) {
     )
   }, [data])
 
-  // Phase offset for bobbing so droplets don't sync
   const phaseOffset = useMemo(() => data.stalkT * 17, [data.stalkT])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, pointer, camera }) => {
     if (!groupRef.current) return
     const t = clock.elapsedTime
-    // Gentle bob
-    groupRef.current.position.y = basePos.y + Math.sin(t * 0.45 + phaseOffset) * 0.18
-    // Slow self-rotation
-    groupRef.current.rotation.y = t * 0.12 + phaseOffset
-    // Pulse scale on hover
-    const targetScale = hovered ? 1.12 : 1.0
-    groupRef.current.scale.setScalar(
-      THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.10)
+
+    // Organic multi-axis water float
+    const floatY = Math.sin(t * 0.42 + phaseOffset) * 0.22
+               + Math.sin(t * 0.73 + phaseOffset * 0.5) * 0.09
+    const floatX = Math.sin(t * 0.31 + phaseOffset * 1.3) * 0.07
+    const floatZ = Math.cos(t * 0.37 + phaseOffset * 0.9) * 0.06
+    groupRef.current.position.set(
+      basePos.x + floatX,
+      basePos.y + floatY,
+      basePos.z + floatZ
     )
+    // Surface-tension wobble rotations
+    groupRef.current.rotation.y = Math.sin(t * 0.11 + phaseOffset) * 0.18
+    groupRef.current.rotation.x = Math.sin(t * 0.22 + phaseOffset * 0.7) * 0.05
+    groupRef.current.rotation.z = Math.sin(t * 0.29 + phaseOffset * 1.1) * 0.04
+
+    // Cursor proximity deformation (screen-space squash/stretch)
+    groupRef.current.getWorldPosition(tmpVec.current)
+    projVec.current.copy(tmpVec.current).project(camera)
+    const dx = pointer.x - projVec.current.x
+    const dy = pointer.y - projVec.current.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const threshold = 0.45
+    let tSX = 1.0, tSY = 1.0, tSZ = 1.0
+    if (dist < threshold) {
+      const strength = (1 - dist / threshold) * 0.55
+      const angle = Math.atan2(dy, dx)
+      const ax = Math.abs(Math.cos(angle))
+      const ay = Math.abs(Math.sin(angle))
+      tSX = 1 + ax * strength
+      tSY = 1 + ay * strength
+      tSZ = 1 / Math.sqrt(tSX * tSY)
+    }
+    groupRef.current.scale.set(
+      THREE.MathUtils.lerp(groupRef.current.scale.x, tSX, 0.09),
+      THREE.MathUtils.lerp(groupRef.current.scale.y, tSY, 0.09),
+      THREE.MathUtils.lerp(groupRef.current.scale.z, tSZ, 0.09)
+    )
+
+    // Per-vertex blob deformation
+    if (geoRef.current) {
+      const pos = geoRef.current.attributes.position
+      const count = pos.count
+      for (let i = 0; i < count; i++) {
+        const ox = origPositions[i * 3]
+        const oy = origPositions[i * 3 + 1]
+        const oz = origPositions[i * 3 + 2]
+        const len = Math.sqrt(ox * ox + oy * oy + oz * oz)
+        if (len === 0) continue
+        const nx = ox / len
+        const ny = oy / len
+        const nz = oz / len
+        const wave =
+          Math.sin(t * 1.3 + ox * 2.2 + phaseOffset) * 0.11 +
+          Math.sin(t * 0.85 + oy * 1.8 + phaseOffset * 0.6) * 0.09 +
+          Math.sin(t * 1.6 + oz * 2.5 + phaseOffset * 1.2) * 0.07 +
+          Math.sin(t * 0.55 + (ox + oz) * 1.4 + phaseOffset * 0.4) * 0.08
+        pos.setXYZ(i, ox + nx * wave, oy + ny * wave, oz + nz * wave)
+      }
+      pos.needsUpdate = true
+      geoRef.current.computeVertexNormals()
+    }
+
+    // Hover image fade in / out
+    if (hoverImageRef.current) {
+      const tOp = hovered ? 0.92 : 0
+      hoverImageRef.current.material.opacity = THREE.MathUtils.lerp(
+        hoverImageRef.current.material.opacity, tOp, 0.07
+      )
+    }
+    // Content text fade out on hover
+    if (contentRef.current) {
+      const tOp = hovered ? 0.18 : 0.92
+      contentRef.current.material.opacity = THREE.MathUtils.lerp(
+        contentRef.current.material.opacity, tOp, 0.07
+      )
+    }
   })
 
   const handleClick = useCallback((e) => {
@@ -157,9 +288,9 @@ export default function WaterDroplet({ data }) {
       onPointerLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      {/* Glass outer sphere */}
+      {/* Glass outer sphere — deformable blob */}
       <mesh ref={outerRef}>
-        <sphereGeometry args={[1.3, 18, 18]} />
+        <sphereGeometry ref={geoRef} args={[1.3, 28, 22]} />
         <meshPhysicalMaterial
           color={glassColor}
           roughness={0}
@@ -176,13 +307,25 @@ export default function WaterDroplet({ data }) {
       </mesh>
 
       {/* Inner content plane (canvas texture) */}
-      <mesh position={[0, 0, 0]} renderOrder={2}>
-        <planeGeometry args={[1.7, 1.7]} />
+      <mesh ref={contentRef} position={[0, 0, 0.15]} renderOrder={2}>
+        <planeGeometry args={[1.1, 1.1]} />
         <meshBasicMaterial
           map={texture}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide}
           transparent
           opacity={0.92}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Hover placeholder image — fades in on hover */}
+      <mesh ref={hoverImageRef} position={[0, 0, 0.17]} renderOrder={3}>
+        <planeGeometry args={[1.05, 1.05]} />
+        <meshBasicMaterial
+          map={hoverTexture}
+          side={THREE.FrontSide}
+          transparent
+          opacity={0}
           depthWrite={false}
         />
       </mesh>
@@ -196,18 +339,6 @@ export default function WaterDroplet({ data }) {
           emissiveIntensity={2.5}
           transparent
           opacity={0.7}
-        />
-      </mesh>
-
-      {/* Thin wire ring around equator for the "leaf droplet" look */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.31, 0.024, 4, 32]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive="#ffffff"
-          emissiveIntensity={0.8}
-          transparent
-          opacity={0.35}
         />
       </mesh>
 

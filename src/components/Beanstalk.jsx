@@ -124,34 +124,7 @@ function useLeafSway(root) {
   })
 }
 
-/* ──────────────────────────────────────────────────────────────
-   Pulsing glow orb at the very top of the stalk
-   ────────────────────────────────────────────────────────────── */
-function TopOrb() {
-  const ref = useRef()
-  const top = useMemo(() => {
-    const p = stalkCurve.getPoint(1)
-    return [p.x, p.y, p.z]
-  }, [])
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 1.4) * 0.08
-      ref.current.scale.setScalar(s)
-    }
-  })
-  return (
-    <mesh ref={ref} position={top}>
-      <sphereGeometry args={[0.9, 8, 8]} />
-      <meshStandardMaterial
-        color="#e0ffcc"
-        emissive="#a0ff80"
-        emissiveIntensity={2.2}
-        transparent
-        opacity={0.72}
-      />
-    </mesh>
-  )
-}
+
 
 /* ──────────────────────────────────────────────────────────────
    ProceduralBeanstalk — used as fallback while GLB is absent
@@ -190,7 +163,6 @@ export function ProceduralBeanstalk() {
       <mesh geometry={vineGeo}>
         <meshStandardMaterial color="#5aad72" flatShading roughness={0.9} emissive="#2a5a38" emissiveIntensity={0.1} />
       </mesh>
-      <TopOrb />
       {[-0.8, 0.6, -0.3, 0.9].map((xOff, i) => (
         <mesh key={i} position={[xOff, 0.05, i % 2 === 0 ? 0.5 : -0.4]}>
           <torusGeometry args={[0.5 + i * 0.15, 0.06, 4, 8, Math.PI * 0.7]} />
@@ -219,7 +191,6 @@ function GLBBeanstalk() {
   return (
     <>
       <primitive object={processedScene} />
-      <TopOrb />
       {[-0.8, 0.6, -0.3, 0.9].map((xOff, i) => (
         <mesh key={i} position={[xOff, 0.05, i % 2 === 0 ? 0.5 : -0.4]}>
           <torusGeometry args={[0.5 + i * 0.15, 0.06, 4, 8, Math.PI * 0.7]} />
