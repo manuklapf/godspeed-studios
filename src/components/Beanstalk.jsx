@@ -33,9 +33,10 @@ export function getStalkPosition(t) {
 function applyEtherealMaterials(root) {
   root.traverse((node) => {
     if (!node.isMesh) return
-    const name = (node.name || '').toLowerCase()
-    const isLeaf  = /leaf|leave|folia|blade/.test(name)
-    const isStalk = /stalk|stem|vine|trunk|branch/.test(name)
+    const name = (node.name || '').toLowerCase().replace(/[\s_-]/g, '')
+    const isLeaf      = /leaf|leave|folia|blade/.test(name)
+    const isStalk     = /stalk|stem|vine|trunk|branch/.test(name)
+    const isWaterDrop = /waterdrop/.test(name)
 
     // Rebuild geometry as non-indexed so flatShading is crisp
     if (node.geometry) {
@@ -43,7 +44,25 @@ function applyEtherealMaterials(root) {
       node.geometry.computeVertexNormals()
     }
 
-    if (isLeaf) {
+    if (isWaterDrop) {
+      // Store original vertex positions for blob deformation
+      node.userData.origPositions = new Float32Array(
+        node.geometry.attributes.position.array
+      )
+      node.material = new THREE.MeshPhysicalMaterial({
+        color: '#c8f4e0',
+        roughness: 0,
+        metalness: 0,
+        transmission: 0.92,
+        thickness: 1.6,
+        ior: 1.38,
+        envMapIntensity: 0.9,
+        transparent: true,
+        opacity: 0.88,
+        emissive: '#c8f4e0',
+        emissiveIntensity: 0.06,
+      })
+    } else if (isLeaf) {
       node.material = new THREE.MeshStandardMaterial({
         color: '#6abf85',
         flatShading: true,
@@ -127,6 +146,93 @@ function useLeafSway(root) {
 
 
 /* ──────────────────────────────────────────────────────────────
+   WaterDrop animation hook — blob deformation + subtle wobble
+   Mirrors the effects applied to the floating WaterDroplet spheres
+   ────────────────────────────────────────────────────────────── */
+/* Shared ref so ScrollCamera can find the GLB WaterDrop in world space */
+export const waterDropRef = { current: null }
+
+function useWaterDropAnimation(root) {
+  const dropNodes = useRef([])
+
+  useEffect(() => {
+    if (!root) return
+    const nodes = []
+    root.traverse((node) => {
+      if (!node.isMesh) return
+      const name = (node.name || '').toLowerCase().replace(/[\s_-]/g, '')
+      if (!/waterdrop/.test(name)) return
+
+      node.userData.phase        = Math.random() * Math.PI * 2
+      node.userData.basePosition = node.position.clone()
+
+      // Store the lowest local-space Y so we can clamp to the leaf surface
+      if (node.userData.origPositions) {
+        let minY = Infinity
+        const op = node.userData.origPositions
+        for (let i = 0; i < op.length / 3; i++) {
+          if (op[i * 3 + 1] < minY) minY = op[i * 3 + 1]
+        }
+        node.userData.contactY = minY
+      }
+
+      nodes.push(node)
+    })
+    if (nodes.length > 0) waterDropRef.current = nodes[0]
+    dropNodes.current = nodes
+  }, [root])
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    dropNodes.current.forEach((node) => {
+      const phase = node.userData.phase || 0
+      const base  = node.userData.basePosition
+
+      // Only float upward (never sink into the leaf)
+      // Minimum offset of 0.004 ensures the base never touches the leaf
+      const floatUp = 0.004 + Math.abs(Math.sin(t * 0.42 + phase)) * 0.008
+      node.position.y = base.y + floatUp
+      node.position.x = base.x
+        + Math.sin(t * 0.31 + phase * 1.3) * 0.003
+      node.position.z = base.z
+        + Math.cos(t * 0.37 + phase * 0.9) * 0.003
+
+      // Only rotate around Y — tilting X/Z would dip the base through the leaf
+      node.rotation.y = Math.sin(t * 0.11 + phase) * 0.18
+      node.rotation.x = 0
+      node.rotation.z = 0
+
+      // Per-vertex blob deformation
+      if (node.userData.origPositions && node.geometry) {
+        const pos  = node.geometry.attributes.position
+        const orig = node.userData.origPositions
+        const count = pos.count
+        for (let i = 0; i < count; i++) {
+          const ox = orig[i * 3]
+          const oy = orig[i * 3 + 1]
+          const oz = orig[i * 3 + 2]
+          const len = Math.sqrt(ox * ox + oy * oy + oz * oz)
+          if (len === 0) continue
+          const nx = ox / len
+          const ny = oy / len
+          const nz = oz / len
+          const wave =
+            Math.sin(t * 1.3  + ox * 2.2 + phase)        * 0.006 +
+            Math.sin(t * 0.85 + oy * 1.8 + phase * 0.6)  * 0.005 +
+            Math.sin(t * 1.6  + oz * 2.5 + phase * 1.2)  * 0.004 +
+            Math.sin(t * 0.55 + (ox + oz) * 1.4 + phase * 0.4) * 0.004
+          // Clamp the bottom vertices so they don't deform below the leaf surface
+          const newY = Math.max(oy + ny * wave, node.userData.contactY ?? oy)
+          pos.setXYZ(i, ox + nx * wave, newY, oz + nz * wave)
+        }
+        pos.needsUpdate = true
+        node.geometry.computeVertexNormals()
+      }
+    })
+  })
+}
+
+/* ──────────────────────────────────────────────────────────────
    ProceduralBeanstalk — used as fallback while GLB is absent
    ────────────────────────────────────────────────────────────── */
 function buildVineCurve() {
@@ -177,7 +283,7 @@ export function ProceduralBeanstalk() {
    GLBBeanstalk — loads the real model (throws if file missing)
    ────────────────────────────────────────────────────────────── */
 function GLBBeanstalk() {
-  const { scene } = useGLTF('/beanstalk.glb')
+  const { scene } = useGLTF('/beanstalk2.glb')
 
   const processedScene = useMemo(() => {
     const clone = scene.clone(true)
@@ -187,6 +293,7 @@ function GLBBeanstalk() {
   }, [scene])
 
   useLeafSway(processedScene)
+  useWaterDropAnimation(processedScene)
 
   return (
     <>

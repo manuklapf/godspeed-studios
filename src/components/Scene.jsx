@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import * as THREE from 'three'
-import Beanstalk, { getStalkPosition } from './Beanstalk'
+import Beanstalk, { getStalkPosition, waterDropRef } from './Beanstalk'
 import WaterDroplet from './WaterDroplet'
 import FloatingParticles from './FloatingParticles'
 import Effects from './Effects'
@@ -15,6 +15,10 @@ function ScrollCamera({ scrollProgress }) {
   const { camera } = useThree()
   const smooth = useRef(0)
   const lookTarget = useRef(new THREE.Vector3())
+  // WaterDrop world-space position, resolved lazily after the GLB mounts
+  const dropPos      = useRef(new THREE.Vector3())
+  const dropFrontPos = useRef(new THREE.Vector3()) // camera pos for the front-on leaf view
+  const dropScrollT  = useRef(-1)   // stalk-t equivalent of the drop's height (-1 = not yet found)
 
   useEffect(() => {
     camera.position.set(12, 2, 12)
@@ -30,20 +34,57 @@ function ScrollCamera({ scrollProgress }) {
        t=0 → base looking up
        t=1 → top, in the clouds */
     const angle = t * Math.PI * 2.8        // ~1.4 full orbits
-    const radius = 14 - t * 6             // 14 → 8 (closer to stalk)
+    const baseRadius = 14 - t * 6         // 14 → 8 (closer to stalk)
     const height = t * 64                 // 0 → 64
 
-    camera.position.x = Math.sin(angle) * radius
-    camera.position.y = height + 2
-    camera.position.z = Math.cos(angle) * radius
+    // Lazily resolve the WaterDrop world position once it's in the scene
+    if (dropScrollT.current < 0 && waterDropRef.current) {
+      const wp = new THREE.Vector3()
+      waterDropRef.current.getWorldPosition(wp)
+      // Only accept once the mesh has a real world position
+      if (wp.lengthSq() > 0.01) {
+        dropPos.current.copy(wp)
+        // Direction from stalk origin → drop in XZ (outward from the beanstalk)
+        const dx = wp.x, dz = wp.z
+        const dLen = Math.sqrt(dx * dx + dz * dz) || 1
+        // Place the front-on camera 7 units out from the drop along that direction
+        dropFrontPos.current.set(
+          wp.x + (dx / dLen) * 7,
+          wp.y,
+          wp.z + (dz / dLen) * 7
+        )
+        // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
+        dropScrollT.current = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
+      }
+    }
 
-    // Look slightly ahead along the stalk
+    // Proximity factor: ramps 0→1→0 within ±12% scroll-t of the drop
+    const proximity = dropScrollT.current >= 0
+      ? THREE.MathUtils.clamp(1 - Math.abs(t - dropScrollT.current) / 0.25, 0, 1)
+      : 0
+
+    // Smoothstep for a softer ease in/out
+    const prox = proximity * proximity * (3 - 2 * proximity)
+
+    // Shrink orbit radius when close (14→8 baseline, then down to 4 at peak)
+    const radius = baseRadius - prox * 4.5
+
+    // Orbit position
+    const orbitX = Math.sin(angle) * radius
+    const orbitZ = Math.cos(angle) * radius
+
+    // Lerp camera to the front-on position when near the drop
+    camera.position.x = THREE.MathUtils.lerp(orbitX, dropFrontPos.current.x, prox)
+    camera.position.y = THREE.MathUtils.lerp(height + 2, dropFrontPos.current.y, prox)
+    camera.position.z = THREE.MathUtils.lerp(orbitZ, dropFrontPos.current.z, prox)
+
+    // Look exactly at the drop when close (prox=1 → pure dropPos, no blend offset)
     const tAhead = Math.min(1, t + 0.04)
     const stalkAhead = getStalkPosition(tAhead)
-    lookTarget.current.lerp(
-      new THREE.Vector3(stalkAhead.x, height + 9, stalkAhead.z),
-      0.06
-    )
+    const defaultLook = new THREE.Vector3(stalkAhead.x, height + 9, stalkAhead.z)
+    defaultLook.lerp(dropPos.current, prox)
+
+    lookTarget.current.lerp(defaultLook, 0.06)
     camera.lookAt(lookTarget.current)
   })
 
