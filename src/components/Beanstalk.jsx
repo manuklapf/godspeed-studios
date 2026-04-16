@@ -147,10 +147,10 @@ function useLeafSway(root) {
 
 /* ──────────────────────────────────────────────────────────────
    WaterDrop animation hook — blob deformation + subtle wobble
-   Mirrors the effects applied to the floating WaterDroplet spheres
+   Mirrors the effects applied to the floating Bubble spheres
    ────────────────────────────────────────────────────────────── */
-/* Shared ref so ScrollCamera can find the GLB WaterDrop in world space */
-export const waterDropRef = { current: null }
+/* Shared ref so ScrollCamera can find all GLB WaterDrop meshes in world space */
+export const waterDropRefs = { current: [] }
 
 function useWaterDropAnimation(root) {
   const dropNodes = useRef([])
@@ -165,6 +165,9 @@ function useWaterDropAnimation(root) {
 
       node.userData.phase        = Math.random() * Math.PI * 2
       node.userData.basePosition = node.position.clone()
+      node.userData.scale        = new THREE.Vector3(1, 1, 1)
+      node.userData.tmpVec       = new THREE.Vector3()
+      node.userData.projVec      = new THREE.Vector3()
 
       // Store the lowest local-space Y so we can clamp to the leaf surface
       if (node.userData.origPositions) {
@@ -178,15 +181,18 @@ function useWaterDropAnimation(root) {
 
       nodes.push(node)
     })
-    if (nodes.length > 0) waterDropRef.current = nodes[0]
+    waterDropRefs.current = nodes
     dropNodes.current = nodes
   }, [root])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, pointer, camera }) => {
     const t = clock.elapsedTime
     dropNodes.current.forEach((node) => {
-      const phase = node.userData.phase || 0
-      const base  = node.userData.basePosition
+      const phase   = node.userData.phase || 0
+      const base    = node.userData.basePosition
+      const scl     = node.userData.scale
+      const tmpVec  = node.userData.tmpVec
+      const projVec = node.userData.projVec
 
       // Only float upward (never sink into the leaf)
       // Minimum offset of 0.004 ensures the base never touches the leaf
@@ -201,6 +207,31 @@ function useWaterDropAnimation(root) {
       node.rotation.y = Math.sin(t * 0.11 + phase) * 0.18
       node.rotation.x = 0
       node.rotation.z = 0
+
+      // Cursor proximity squash/stretch (screen-space, same as Bubble)
+      if (scl && tmpVec && projVec) {
+        node.getWorldPosition(tmpVec)
+        projVec.copy(tmpVec).project(camera)
+        const cdx = pointer.x - projVec.x
+        const cdy = pointer.y - projVec.y
+        const cdist = Math.sqrt(cdx * cdx + cdy * cdy)
+        const threshold = 0.45
+        let tSX = 1.0, tSY = 1.0, tSZ = 1.0
+        if (cdist < threshold) {
+          const strength = (1 - cdist / threshold) * 0.55
+          const ang = Math.atan2(cdy, cdx)
+          const ax = Math.abs(Math.cos(ang))
+          const ay = Math.abs(Math.sin(ang))
+          tSX = 1 + ax * strength
+          tSY = 1 + ay * strength
+          tSZ = 1 / Math.sqrt(tSX * tSY)
+        }
+        // Only allow upward stretch (tSY >= 1) to avoid pushing base into the leaf
+        scl.x = THREE.MathUtils.lerp(scl.x, tSX, 0.09)
+        scl.y = THREE.MathUtils.lerp(scl.y, Math.max(1.0, tSY), 0.09)
+        scl.z = THREE.MathUtils.lerp(scl.z, tSZ, 0.09)
+        node.scale.set(scl.x, scl.y, scl.z)
+      }
 
       // Per-vertex blob deformation
       if (node.userData.origPositions && node.geometry) {
@@ -283,7 +314,7 @@ export function ProceduralBeanstalk() {
    GLBBeanstalk — loads the real model (throws if file missing)
    ────────────────────────────────────────────────────────────── */
 function GLBBeanstalk() {
-  const { scene } = useGLTF('/beanstalk2.glb')
+  const { scene } = useGLTF('/beanstalk.glb')
 
   const processedScene = useMemo(() => {
     const clone = scene.clone(true)

@@ -2,8 +2,8 @@ import React, { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import * as THREE from 'three'
-import Beanstalk, { getStalkPosition, waterDropRef } from './Beanstalk'
-import WaterDroplet from './WaterDroplet'
+import Beanstalk, { getStalkPosition, waterDropRefs } from './Beanstalk'
+import Bubble from './Bubble'
 import FloatingParticles from './FloatingParticles'
 import Effects from './Effects'
 import { allDroplets } from '../data/portfolio'
@@ -13,12 +13,13 @@ import { allDroplets } from '../data/portfolio'
    ────────────────────────────────────────────────────────────── */
 function ScrollCamera({ scrollProgress }) {
   const { camera } = useThree()
-  const smooth = useRef(0)
+  const smooth     = useRef(0)
   const lookTarget = useRef(new THREE.Vector3())
-  // WaterDrop world-space position, resolved lazily after the GLB mounts
-  const dropPos      = useRef(new THREE.Vector3())
-  const dropFrontPos = useRef(new THREE.Vector3()) // camera pos for the front-on leaf view
-  const dropScrollT  = useRef(-1)   // stalk-t equivalent of the drop's height (-1 = not yet found)
+  // Independently smoothed camera position — prevents jumps when drop focus changes
+  const camPos     = useRef(new THREE.Vector3(12, 2, 12))
+  // Per-drop data resolved lazily after the GLB mounts.
+  // Each entry: { pos: Vector3, frontPos: Vector3, scrollT: number }
+  const dropsData  = useRef([])
 
   useEffect(() => {
     camera.position.set(12, 2, 12)
@@ -26,65 +27,95 @@ function ScrollCamera({ scrollProgress }) {
   }, [camera])
 
   useFrame(() => {
-    // Smooth scroll with gentle lag
-    smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.04)
+    // Smooth scroll — gentle lag so fast swipes don't whip the camera
+    smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03)
     const t = smooth.current
 
     /* Spiral path around the beanstalk
        t=0 → base looking up
        t=1 → top, in the clouds */
-    const angle = t * Math.PI * 2.8        // ~1.4 full orbits
-    const baseRadius = 14 - t * 6         // 14 → 8 (closer to stalk)
-    const height = t * 64                 // 0 → 64
+    const angle      = t * Math.PI * 2.8   // ~1.4 full orbits
+    const baseRadius = 14 - t * 6          // 14 → 8 (closer to stalk)
+    const height     = t * 64              // 0 → 64
 
-    // Lazily resolve the WaterDrop world position once it's in the scene
-    if (dropScrollT.current < 0 && waterDropRef.current) {
-      const wp = new THREE.Vector3()
-      waterDropRef.current.getWorldPosition(wp)
-      // Only accept once the mesh has a real world position
-      if (wp.lengthSq() > 0.01) {
-        dropPos.current.copy(wp)
-        // Direction from stalk origin → drop in XZ (outward from the beanstalk)
-        const dx = wp.x, dz = wp.z
-        const dLen = Math.sqrt(dx * dx + dz * dz) || 1
-        // Place the front-on camera 7 units out from the drop along that direction
-        dropFrontPos.current.set(
-          wp.x + (dx / dLen) * 7,
-          wp.y,
-          wp.z + (dz / dLen) * 7
-        )
-        // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
-        dropScrollT.current = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
+    // Lazily resolve every waterdrop's world position once it's in the scene
+    waterDropRefs.current.forEach((node, i) => {
+      if (!dropsData.current[i]) {
+        dropsData.current[i] = {
+          pos: new THREE.Vector3(),
+          frontPos: new THREE.Vector3(),
+          scrollT: -1,
+        }
       }
+      const dd = dropsData.current[i]
+      if (dd.scrollT < 0) {
+        const wp = new THREE.Vector3()
+        node.getWorldPosition(wp)
+        if (wp.lengthSq() > 0.01) {
+          dd.pos.copy(wp)
+          // Direction from stalk origin → drop in XZ (outward from the beanstalk)
+          const dx = wp.x, dz = wp.z
+          const dLen = Math.sqrt(dx * dx + dz * dz) || 1
+          // Place the front-on camera 7 units out from the drop along that direction
+          dd.frontPos.set(
+            wp.x + (dx / dLen) * 7,
+            wp.y,
+            wp.z + (dz / dLen) * 7
+          )
+          // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
+          dd.scrollT = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
+        }
+      }
+    })
+
+    // Weighted blend across ALL drops so there is never a hard winner-switch.
+    // Each drop contributes based on a narrow (±10%) smoothstep proximity bell.
+    // Dividing by totalWeight normalises the blend so the camera always moves
+    // toward a single weighted-average target, not a sharp jump.
+    const blendLook  = new THREE.Vector3()
+    const blendFront = new THREE.Vector3()
+    let totalWeight  = 0
+
+    dropsData.current.forEach((dd) => {
+      if (dd.scrollT < 0) return
+      const raw = THREE.MathUtils.clamp(1 - Math.abs(t - dd.scrollT) / 0.10, 0, 1)
+      const w   = raw * raw * (3 - 2 * raw) // smoothstep
+      blendLook.addScaledVector(dd.pos, w)
+      blendFront.addScaledVector(dd.frontPos, w)
+      totalWeight += w
+    })
+
+    // prox: how strongly any drop is influencing right now (capped at 1)
+    const prox = Math.min(1, totalWeight)
+
+    if (totalWeight > 0) {
+      blendLook.divideScalar(totalWeight)
+      blendFront.divideScalar(totalWeight)
     }
 
-    // Proximity factor: ramps 0→1→0 within ±12% scroll-t of the drop
-    const proximity = dropScrollT.current >= 0
-      ? THREE.MathUtils.clamp(1 - Math.abs(t - dropScrollT.current) / 0.25, 0, 1)
-      : 0
-
-    // Smoothstep for a softer ease in/out
-    const prox = proximity * proximity * (3 - 2 * proximity)
-
-    // Shrink orbit radius when close (14→8 baseline, then down to 4 at peak)
+    // Shrink orbit radius as we approach a drop
     const radius = baseRadius - prox * 4.5
-
-    // Orbit position
     const orbitX = Math.sin(angle) * radius
     const orbitZ = Math.cos(angle) * radius
 
-    // Lerp camera to the front-on position when near the drop
-    camera.position.x = THREE.MathUtils.lerp(orbitX, dropFrontPos.current.x, prox)
-    camera.position.y = THREE.MathUtils.lerp(height + 2, dropFrontPos.current.y, prox)
-    camera.position.z = THREE.MathUtils.lerp(orbitZ, dropFrontPos.current.z, prox)
+    // Desired camera position — blend between orbit and front-facing position
+    const desiredX = THREE.MathUtils.lerp(orbitX,      blendFront.x, prox)
+    const desiredY = THREE.MathUtils.lerp(height + 2,  blendFront.y, prox)
+    const desiredZ = THREE.MathUtils.lerp(orbitZ,      blendFront.z, prox)
 
-    // Look exactly at the drop when close (prox=1 → pure dropPos, no blend offset)
-    const tAhead = Math.min(1, t + 0.04)
+    // Smooth camera position independently — this is what eliminates jumps/rolls
+    camPos.current.x = THREE.MathUtils.lerp(camPos.current.x, desiredX, 0.04)
+    camPos.current.y = THREE.MathUtils.lerp(camPos.current.y, desiredY, 0.04)
+    camPos.current.z = THREE.MathUtils.lerp(camPos.current.z, desiredZ, 0.04)
+    camera.position.copy(camPos.current)
+
+    // Smoothly blend look target toward the active drop (or stalk ahead)
+    const tAhead    = Math.min(1, t + 0.04)
     const stalkAhead = getStalkPosition(tAhead)
     const defaultLook = new THREE.Vector3(stalkAhead.x, height + 9, stalkAhead.z)
-    defaultLook.lerp(dropPos.current, prox)
+    if (totalWeight > 0) defaultLook.lerp(blendLook, prox)
 
-    lookTarget.current.lerp(defaultLook, 0.06)
+    lookTarget.current.lerp(defaultLook, 0.035)
     camera.lookAt(lookTarget.current)
   })
 
@@ -185,9 +216,9 @@ export default function Scene({ scrollProgress }) {
       {/* ── Beanstalk ─────────────────────────────────────────── */}
       <Beanstalk />
 
-      {/* ── Water droplets ───────────────────────────────────── */}
+      {/* ── Bubbles ──────────────────────────────────────────── */}
       {allDroplets.map((d) => (
-        <WaterDroplet key={d.id} data={d} />
+        <Bubble key={d.id} data={d} />
       ))}
 
       {/* ── Floating fairy particles ─────────────────────────── */}
