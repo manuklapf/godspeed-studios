@@ -280,6 +280,8 @@ export default function Bubble({ data }) {
   // Droplet glass tint based on type
   const glassColor = data.type === 'reference' ? '#d8e8ff' : '#c8f4e0'
 
+  return null
+
   return (
     <group
       ref={groupRef}

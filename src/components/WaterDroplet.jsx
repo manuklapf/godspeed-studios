@@ -232,30 +232,6 @@ export default function Bubble({ data }) {
       THREE.MathUtils.lerp(groupRef.current.scale.z, tSZ, 0.09)
     )
 
-    // Per-vertex blob deformation
-    if (geoRef.current) {
-      const pos = geoRef.current.attributes.position
-      const count = pos.count
-      for (let i = 0; i < count; i++) {
-        const ox = origPositions[i * 3]
-        const oy = origPositions[i * 3 + 1]
-        const oz = origPositions[i * 3 + 2]
-        const len = Math.sqrt(ox * ox + oy * oy + oz * oz)
-        if (len === 0) continue
-        const nx = ox / len
-        const ny = oy / len
-        const nz = oz / len
-        const wave =
-          Math.sin(t * 1.3 + ox * 2.2 + phaseOffset) * 0.11 +
-          Math.sin(t * 0.85 + oy * 1.8 + phaseOffset * 0.6) * 0.09 +
-          Math.sin(t * 1.6 + oz * 2.5 + phaseOffset * 1.2) * 0.07 +
-          Math.sin(t * 0.55 + (ox + oz) * 1.4 + phaseOffset * 0.4) * 0.08
-        pos.setXYZ(i, ox + nx * wave, oy + ny * wave, oz + nz * wave)
-      }
-      pos.needsUpdate = true
-      geoRef.current.computeVertexNormals()
-    }
-
     // Hover image fade in / out
     if (hoverImageRef.current) {
       const tOp = hovered ? 0.92 : 0

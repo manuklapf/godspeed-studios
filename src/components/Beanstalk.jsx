@@ -30,10 +30,35 @@ export function getStalkPosition(t) {
 /* ──────────────────────────────────────────────────────────────
    Apply ethereal flat-shaded materials to all meshes in the GLB
    ────────────────────────────────────────────────────────────── */
+// Lazily created once and shared across all chain meshes
+let _rustMat = null
+function getRustMaterial() {
+  if (_rustMat) return _rustMat
+  const { colorTex, roughnessTex } = makeRustTextures()
+  for (const t of [colorTex, roughnessTex]) {
+    t.wrapS = THREE.RepeatWrapping
+    t.wrapT = THREE.RepeatWrapping
+    t.repeat.set(2, 2)
+  }
+  _rustMat = new THREE.MeshStandardMaterial({
+    map: colorTex,
+    roughnessMap: roughnessTex,
+    // No metalnessMap — the whole surface is iron, rust included
+    color: '#6a5a46',    // warm iron-grey; lightened so shine reads clearly
+    roughness: 0.18,     // very low base; rust patches override via roughnessMap
+    metalness: 1.0,      // fully metallic across the entire surface
+    envMapIntensity: 2.8,// strong env reflections for a mirror-like sheen on links
+  })
+  return _rustMat
+}
+
 function applyEtherealMaterials(root) {
   root.traverse((node) => {
     if (!node.isMesh) return
     const name = (node.name || '').toLowerCase().replace(/[\s_-]/g, '')
+    // Log mesh names once so we can confirm the chain mesh name
+    if (import.meta.env.DEV) console.log('[GLB mesh]', node.name)
+    const isChain     = /chain|link|ring/.test(name)
     const isLeaf      = /leaf|leave|folia|blade/.test(name)
     const isStalk     = /stalk|stem|vine|trunk|branch/.test(name)
     const isWaterDrop = /waterdrop/.test(name)
@@ -44,8 +69,9 @@ function applyEtherealMaterials(root) {
       node.geometry.computeVertexNormals()
     }
 
-    if (isWaterDrop) {
-      // Store original vertex positions for blob deformation
+    if (isChain) {
+      node.material = getRustMaterial()
+    } else if (isWaterDrop) {
       node.userData.origPositions = new Float32Array(
         node.geometry.attributes.position.array
       )
@@ -233,32 +259,6 @@ function useWaterDropAnimation(root) {
         node.scale.set(scl.x, scl.y, scl.z)
       }
 
-      // Per-vertex blob deformation
-      if (node.userData.origPositions && node.geometry) {
-        const pos  = node.geometry.attributes.position
-        const orig = node.userData.origPositions
-        const count = pos.count
-        for (let i = 0; i < count; i++) {
-          const ox = orig[i * 3]
-          const oy = orig[i * 3 + 1]
-          const oz = orig[i * 3 + 2]
-          const len = Math.sqrt(ox * ox + oy * oy + oz * oz)
-          if (len === 0) continue
-          const nx = ox / len
-          const ny = oy / len
-          const nz = oz / len
-          const wave =
-            Math.sin(t * 1.3  + ox * 2.2 + phase)        * 0.006 +
-            Math.sin(t * 0.85 + oy * 1.8 + phase * 0.6)  * 0.005 +
-            Math.sin(t * 1.6  + oz * 2.5 + phase * 1.2)  * 0.004 +
-            Math.sin(t * 0.55 + (ox + oz) * 1.4 + phase * 0.4) * 0.004
-          // Clamp the bottom vertices so they don't deform below the leaf surface
-          const newY = Math.max(oy + ny * wave, node.userData.contactY ?? oy)
-          pos.setXYZ(i, ox + nx * wave, newY, oz + nz * wave)
-        }
-        pos.needsUpdate = true
-        node.geometry.computeVertexNormals()
-      }
     })
   })
 }
@@ -283,6 +283,168 @@ function buildVineCurve() {
   return new THREE.CatmullRomCurve3(pts)
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Rust canvas texture — dark iron base with orange-brown patches
+   ────────────────────────────────────────────────────────────── */
+/**
+ * Returns { colorTex, roughnessTex } for old rusted metal.
+ * roughnessTex: bright = rough (rust), dark = smooth (bare metal)
+ */
+function makeRustTextures() {
+  const SIZE = 256
+  // ── Colour map ──────────────────────────────────────────────
+  const cCanvas = document.createElement('canvas')
+  cCanvas.width = SIZE ; cCanvas.height = SIZE
+  const cc = cCanvas.getContext('2d')
+
+  // Bare dark iron base — slightly blue-grey to read metallic
+  cc.fillStyle = '#28231e'
+  cc.fillRect(0, 0, SIZE, SIZE)
+
+  // Large rust patches
+  const rustHues = ['#7a2e0c', '#8c3a14', '#a04822', '#6b2208', '#b85030', '#5a1c08', '#c05828']
+  for (let i = 0; i < 32; i++) {
+    const x = Math.random() * SIZE, y = Math.random() * SIZE
+    const r = 12 + Math.random() * 40
+    const c = rustHues[Math.floor(Math.random() * rustHues.length)]
+    const g = cc.createRadialGradient(x, y, 0, x, y, r)
+    g.addColorStop(0,    c + 'dd')
+    g.addColorStop(0.5,  c + '99')
+    g.addColorStop(1,    c + '00')
+    cc.fillStyle = g
+    cc.beginPath() ; cc.arc(x, y, r, 0, Math.PI * 2) ; cc.fill()
+  }
+
+  // Fine rust specks
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * SIZE, y = Math.random() * SIZE
+    const r = 1 + Math.random() * 3
+    cc.fillStyle = `rgba(${160 + (Math.random()*40|0)},${40+(Math.random()*30|0)},${6+(Math.random()*14|0)},${0.7+Math.random()*0.3})`
+    cc.beginPath() ; cc.arc(x, y, r, 0, Math.PI * 2) ; cc.fill()
+  }
+
+  // Polished wear zones — bright iron showing through
+  for (let i = 0; i < 14; i++) {
+    const x = Math.random() * SIZE, y = Math.random() * SIZE
+    const r = 5 + Math.random() * 18
+    const g = cc.createRadialGradient(x, y, 0, x, y, r)
+    g.addColorStop(0,   'rgba(145,130,115,0.75)')
+    g.addColorStop(0.5, 'rgba(110,100,90,0.4)')
+    g.addColorStop(1,   'rgba(110,100,90,0)')
+    cc.fillStyle = g
+    cc.beginPath() ; cc.arc(x, y, r, 0, Math.PI * 2) ; cc.fill()
+  }
+
+  // Scratches
+  cc.strokeStyle = 'rgba(160,145,130,0.35)'
+  for (let i = 0; i < 24; i++) {
+    cc.lineWidth = 0.5 + Math.random() * 1.2
+    const x1 = Math.random()*SIZE, y1 = Math.random()*SIZE
+    const len = 10 + Math.random()*60, ang = Math.random()*Math.PI
+    cc.beginPath()
+    cc.moveTo(x1, y1)
+    cc.lineTo(x1 + Math.cos(ang)*len, y1 + Math.sin(ang)*len)
+    cc.stroke()
+  }
+
+  // ── Roughness map ───────────────────────────────────────────
+  // White = rough (rust/pits), Black = smooth (polished metal)
+  const rCanvas = document.createElement('canvas')
+  rCanvas.width = SIZE ; rCanvas.height = SIZE
+  const rc = rCanvas.getContext('2d')
+
+  // Start smooth — bare polished iron (dark = low roughness = shiny)
+  rc.fillStyle = '#1a1a1a'
+  rc.fillRect(0, 0, SIZE, SIZE)
+
+  // Rust / pitted patches → rough (bright)
+  for (let i = 0; i < 22; i++) {
+    const x = Math.random() * SIZE, y = Math.random() * SIZE
+    const r = 8 + Math.random() * 28
+    const v = 170 + (Math.random() * 70 | 0)
+    const g = rc.createRadialGradient(x, y, 0, x, y, r)
+    g.addColorStop(0,   `rgba(${v},${v},${v},0.95)`)
+    g.addColorStop(0.55,`rgba(${v},${v},${v},0.55)`)
+    g.addColorStop(1,   `rgba(${v},${v},${v},0)`)
+    rc.fillStyle = g
+    rc.beginPath() ; rc.arc(x, y, r, 0, Math.PI * 2) ; rc.fill()
+  }
+
+  // Micro-pits / scratches → slightly rough streaks
+  rc.strokeStyle = 'rgba(90,90,90,0.5)'
+  for (let i = 0; i < 20; i++) {
+    rc.lineWidth = 1 + Math.random() * 2
+    const x1 = Math.random()*SIZE, y1 = Math.random()*SIZE
+    const len = 8 + Math.random()*40, ang = Math.random()*Math.PI
+    rc.beginPath()
+    rc.moveTo(x1, y1)
+    rc.lineTo(x1 + Math.cos(ang)*len, y1 + Math.sin(ang)*len)
+    rc.stroke()
+  }
+
+  const colorTex     = new THREE.CanvasTexture(cCanvas)
+  const roughnessTex = new THREE.CanvasTexture(rCanvas)
+  return { colorTex, roughnessTex }
+}
+
+/** @deprecated — kept for ChainAlongStalk torus fallback */
+function makeRustTexture() { return makeRustTextures().colorTex }
+
+/* ──────────────────────────────────────────────────────────────
+   Build chain link data — positions + quaternions along stalk
+   Adjacent links alternate 90° so they appear interlocked
+   ────────────────────────────────────────────────────────────── */
+function buildChainLinks(numLinks = 72) {
+  const links = []
+  const Z  = new THREE.Vector3(0, 0, 1)
+  const UP = new THREE.Vector3(0, 1, 0)
+
+  for (let i = 0; i < numLinks; i++) {
+    const t   = i / (numLinks - 1)
+    const pos = stalkCurve.getPoint(t)
+    const tan = stalkCurve.getTangent(t).normalize()
+
+    // Normal perpendicular to tangent — fall back to X when tan ≈ UP
+    let normal = new THREE.Vector3().crossVectors(tan, UP)
+    if (normal.lengthSq() < 0.01) normal.set(1, 0, 0)
+    normal.normalize()
+    const binormal = new THREE.Vector3().crossVectors(tan, normal).normalize()
+
+    // Hole axis: alternates between normal and binormal to simulate interlocking
+    const holeAxis = i % 2 === 0 ? normal : binormal
+    const quat = new THREE.Quaternion().setFromUnitVectors(Z, holeAxis)
+
+    // Hang ~0.55 units outward from the stalk centre
+    links.push({
+      pos: new THREE.Vector3(
+        pos.x + normal.x * 0.55,
+        pos.y + normal.y * 0.55,
+        pos.z + normal.z * 0.55
+      ),
+      quat: quat.clone(),
+    })
+  }
+  return links
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ChainAlongStalk — rusted interlocked chain running up the stalk
+   ────────────────────────────────────────────────────────────── */
+function ChainAlongStalk() {
+  const links = useMemo(() => buildChainLinks(72), [])
+  const material = useMemo(() => getRustMaterial(), [])
+
+  return (
+    <group>
+      {links.map((link, i) => (
+        <mesh key={i} position={link.pos} quaternion={link.quat} material={material}>
+          <torusGeometry args={[0.24, 0.065, 8, 16]} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 export function ProceduralBeanstalk() {
   const stalkGeo = useMemo(
     () => new THREE.TubeGeometry(stalkCurve, 80, 0.38, 5, false), []
@@ -300,12 +462,7 @@ export function ProceduralBeanstalk() {
       <mesh geometry={vineGeo}>
         <meshStandardMaterial color="#5aad72" flatShading roughness={0.9} emissive="#2a5a38" emissiveIntensity={0.1} />
       </mesh>
-      {[-0.8, 0.6, -0.3, 0.9].map((xOff, i) => (
-        <mesh key={i} position={[xOff, 0.05, i % 2 === 0 ? 0.5 : -0.4]}>
-          <torusGeometry args={[0.5 + i * 0.15, 0.06, 4, 8, Math.PI * 0.7]} />
-          <meshStandardMaterial color="#4a7a3a" flatShading roughness={1} emissive="#1a3a18" emissiveIntensity={0.1} />
-        </mesh>
-      ))}
+      <ChainAlongStalk />
     </group>
   )
 }
@@ -329,12 +486,6 @@ function GLBBeanstalk() {
   return (
     <>
       <primitive object={processedScene} />
-      {[-0.8, 0.6, -0.3, 0.9].map((xOff, i) => (
-        <mesh key={i} position={[xOff, 0.05, i % 2 === 0 ? 0.5 : -0.4]}>
-          <torusGeometry args={[0.5 + i * 0.15, 0.06, 4, 8, Math.PI * 0.7]} />
-          <meshStandardMaterial color="#4a7a3a" flatShading roughness={1} emissive="#1a3a18" emissiveIntensity={0.1} />
-        </mesh>
-      ))}
     </>
   )
 }
