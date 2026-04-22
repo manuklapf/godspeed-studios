@@ -216,11 +216,6 @@ export default function Scene({ scrollProgress }) {
       {/* ── Beanstalk ─────────────────────────────────────────── */}
       <Beanstalk />
 
-      {/* ── Bubbles ──────────────────────────────────────────── */}
-      {allDroplets.map((d) => (
-        <Bubble key={d.id} data={d} />
-      ))}
-
       {/* ── Floating fairy particles ─────────────────────────── */}
       <FloatingParticles count={2200} />
 

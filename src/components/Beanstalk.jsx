@@ -1,7 +1,8 @@
-import React, { Component, useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import React, { Component, useEffect, useMemo, useRef, useState } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useGLTF, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import { allDroplets } from '../data/portfolio'
 
 /* ──────────────────────────────────────────────────────────────
    Stalk curve definition (exported so ScrollCamera can query it)
@@ -194,6 +195,8 @@ function useWaterDropAnimation(root) {
       node.userData.scale        = new THREE.Vector3(1, 1, 1)
       node.userData.tmpVec       = new THREE.Vector3()
       node.userData.projVec      = new THREE.Vector3()
+      // Assign portfolio data by drop index
+      node.userData.dropData     = allDroplets[nodes.length % allDroplets.length]
 
       // Store the lowest local-space Y so we can clamp to the leaf surface
       if (node.userData.origPositions) {
@@ -261,6 +264,60 @@ function useWaterDropAnimation(root) {
 
     })
   })
+}
+
+/* ──────────────────────────────────────────────────────────────
+   WaterDropHoverOverlay — speech bubble above hovered GLB drops
+   ────────────────────────────────────────────────────────────── */
+function WaterDropHoverOverlay() {
+  const groupRef = useRef()
+  const [hoveredData, setHoveredData] = useState(null)
+  const { raycaster, pointer } = useThree()
+  const prevHovered = useRef(null)
+  const tmpPos = useRef(new THREE.Vector3())
+  const sphere = useRef(new THREE.Sphere())
+
+  useFrame(({ camera }) => {
+    if (waterDropRefs.current.length === 0) return
+
+    raycaster.setFromCamera(pointer, camera)
+    const intersects = raycaster.intersectObjects(waterDropRefs.current, false)
+    const hit = intersects.length > 0 ? intersects[0].object : null
+
+    if (hit !== prevHovered.current) {
+      prevHovered.current = hit
+      document.body.style.cursor = hit ? 'pointer' : 'auto'
+      setHoveredData(hit ? (hit.userData.dropData || null) : null)
+    }
+
+    if (hit && groupRef.current) {
+      // Compute world-space bounding sphere to position bubble cleanly above the top
+      hit.geometry.computeBoundingSphere()
+      sphere.current.copy(hit.geometry.boundingSphere)
+      sphere.current.applyMatrix4(hit.matrixWorld)
+      groupRef.current.position.set(
+        sphere.current.center.x,
+        sphere.current.center.y + sphere.current.radius + 0.35,
+        sphere.current.center.z
+      )
+    }
+  })
+
+  return (
+    <group ref={groupRef} position={[0, -1000, 0]}>
+      {hoveredData && (
+        <Html center distanceFactor={9} zIndexRange={[50, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="speech-bubble">
+            <span className="speech-bubble-tag">{hoveredData.tag}</span>
+            <strong className="speech-bubble-title">{hoveredData.title}</strong>
+            {hoveredData.year && (
+              <span className="speech-bubble-year">{hoveredData.year}</span>
+            )}
+          </div>
+        </Html>
+      )}
+    </group>
+  )
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -486,6 +543,7 @@ function GLBBeanstalk() {
   return (
     <>
       <primitive object={processedScene} />
+      <WaterDropHoverOverlay />
     </>
   )
 }
