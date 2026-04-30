@@ -1,8 +1,16 @@
 /* ─────────────────────────────────────────────────────────────────
    PORTFOLIO DATA
-   Replace placeholder content and colors with your actual projects.
-   For images, add files to /public/images/ and update the `image`
-   field with their path (e.g. "/images/project1.jpg").
+
+   Each entry in `allDroplets` is assigned to a GLB waterdrop mesh
+   in the order they are traversed (bottom → top of beanstalk).
+   The array order here must match the physical order of WaterDrop
+   meshes in beanstalk.glb.
+
+   Fields used in the 3D scene (speech bubble on hover):
+     tag, title, bubbleLabel, year, type, route
+
+   Fields used on the case-study / detail pages:
+     tag, title, subtitle, description, link, year, bubbleLabel
    ───────────────────────────────────────────────────────────────── */
 
 export const caseStudies = [
@@ -14,9 +22,6 @@ export const caseStudies = [
     description:
       "A comprehensive design system built for a fintech product. Reduced design-to-dev handoff time by 60% and unified the product's visual language.",
     link: 'https://your-project-link.com',
-    colorA: '#a8e6cf',
-    colorB: '#56c596',
-    // image: '/images/project1.jpg',  ← uncomment & add real image
     year: '2024',
   },
   {
@@ -27,9 +32,6 @@ export const caseStudies = [
     description:
       "End-to-end UX redesign of an e-commerce checkout flow, increasing conversion by 34% through simplified interactions and motion feedback.",
     link: 'https://your-project-link.com',
-    colorA: '#dcedc1',
-    colorB: '#8bc34a',
-    // image: '/images/project2.jpg',
     year: '2023',
   },
   {
@@ -40,9 +42,6 @@ export const caseStudies = [
     description:
       "Interactive data-journalism piece combining scrollytelling, custom WebGL visualisations, and narrative design for a newsroom.",
     link: 'https://your-project-link.com',
-    colorA: '#b3e5fc',
-    colorB: '#4fc3f7',
-    // image: '/images/project3.jpg',
     year: '2023',
   },
 ]
@@ -57,8 +56,6 @@ export const references = [
     description:
       "\"An extraordinarily talented designer who combines sharp strategic thinking with beautiful craft. A true pleasure to work with.\"",
     link: 'https://linkedin.com',
-    colorA: '#e1bee7',
-    colorB: '#9c27b0',
     year: '',
   },
   {
@@ -70,17 +67,18 @@ export const references = [
     description:
       "\"Brought our product to life with elegance and precision. Their ability to translate complex problems into intuitive experiences is rare.\"",
     link: 'https://linkedin.com',
-    colorA: '#ffe0b2',
-    colorB: '#ff9800',
     year: '',
   },
 ]
 
-/* All droplets in scene order (bottom → top of beanstalk) */
+/* ─────────────────────────────────────────────────────────────────
+   All droplets in scene order (bottom → top of beanstalk).
+   Index 0 = the lowest GLB WaterDrop mesh, index N = the highest.
+   ───────────────────────────────────────────────────────────────── */
 export const allDroplets = [
-  { ...caseStudies[0], stalkT: 0.18, offsetX: 2.4, offsetZ: 0.5 },
-  { ...references[0],  stalkT: 0.30, offsetX: -2.6, offsetZ: 0.3 },
-  { ...caseStudies[1], stalkT: 0.46, offsetX: 2.2, offsetZ: -0.5 },
-  { ...caseStudies[2], stalkT: 0.62, offsetX: -2.4, offsetZ: 0.4 },
-  { ...references[1],  stalkT: 0.78, offsetX: 2.0, offsetZ: -0.2 },
+  { ...caseStudies[0], route: '/project/ethereal-design-system' },
+  { ...references[0],  route: '/video-photography', bubbleLabel: 'Video & Photography Work' },
+  { ...caseStudies[1], route: '/project/cloud-commerce' },
+  { ...caseStudies[2], route: '/project/immersive-data' },
+  { ...references[1],  route: '/project/reference' },
 ]

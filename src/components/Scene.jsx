@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import * as THREE from 'three'
-import Beanstalk, { getStalkPosition, waterDropRefs } from './Beanstalk'
+import Beanstalk, { getStalkPosition, waterDropRefs, dropClickBus } from './Beanstalk'
 import Bubble from './Bubble'
 import FloatingParticles from './FloatingParticles'
 import Effects from './Effects'
@@ -13,7 +13,7 @@ import { allDroplets } from '../data/portfolio'
    ────────────────────────────────────────────────────────────── */
 function ScrollCamera({ scrollProgress }) {
   const { camera } = useThree()
-  const smooth     = useRef(0)
+  const smooth     = useRef(1)
   const lookTarget = useRef(new THREE.Vector3())
   // Independently smoothed camera position — prevents jumps when drop focus changes
   const camPos     = useRef(new THREE.Vector3(12, 2, 12))
@@ -22,14 +22,29 @@ function ScrollCamera({ scrollProgress }) {
   const dropsData  = useRef([])
 
   useEffect(() => {
-    camera.position.set(12, 2, 12)
-    camera.lookAt(0, 6, 0)
+    camera.position.set(12, 66, 12)
+    camera.lookAt(0, 62, 0)
   }, [camera])
 
   useFrame(() => {
+    // ── Zoom-in override when a drop is clicked ──────────────
+    if (dropClickBus.active && dropClickBus.targetPos) {
+      const target = dropClickBus.targetPos
+      // Approach from current direction, stopping ~1.5 units from centre
+      const dir = new THREE.Vector3().subVectors(camPos.current, target)
+      const dist = dir.length()
+      if (dist > 0.01) dir.normalize()
+      const zoomDest = target.clone().addScaledVector(dir, Math.max(1.5, dist * 0.1))
+      camPos.current.lerp(zoomDest, 0.055)
+      camera.position.copy(camPos.current)
+      lookTarget.current.lerp(target, 0.08)
+      camera.lookAt(lookTarget.current)
+      return
+    }
+
     // Smooth scroll — gentle lag so fast swipes don't whip the camera
     smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03)
-    const t = smooth.current
+    const t = 1 - smooth.current
 
     /* Spiral path around the beanstalk
        t=0 → base looking up

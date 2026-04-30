@@ -1,7 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Preload } from '@react-three/drei'
+import { useNavigate } from 'react-router-dom'
 import Scene from './components/Scene'
+import Navbar from './components/Navbar'
+import { dropClickBus } from './components/Beanstalk'
 import { allDroplets } from './data/portfolio'
 import gsap from 'gsap'
 
@@ -10,9 +13,11 @@ const SCROLL_PAGES = 7   // 700vh / 100vh
 
 export default function App() {
   const scrollRef = useRef(null)
-  const [scrollProgress, setScrollProgress] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(1)
   const [activeSection, setActiveSection] = useState(null)
   const [scrolled, setScrolled] = useState(false)
+  const [whiteFade, setWhiteFade] = useState(false)
+  const navigate = useNavigate()
 
   /* Track raw scroll progress 0→1 */
   useEffect(() => {
@@ -35,19 +40,44 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  /* Start at the bottom of the scroll space (base of beanstalk) — instant, no animation */
+  useLayoutEffect(() => {
+    window.scrollTo({ top: document.documentElement.scrollHeight - window.innerHeight, behavior: 'instant' })
+    // Clear any leftover zoom state from a previous droplet click
+    dropClickBus.active = false
+    dropClickBus.targetPos = null
+  }, [])
+
   /* Intro animation */
   useEffect(() => {
-    gsap.fromTo(
-      '.hero-title',
-      { opacity: 0, y: -24 },
-      { opacity: 1, y: 0, duration: 2.2, ease: 'power3.out', delay: 0.4 }
-    )
     gsap.fromTo(
       '.scroll-hint',
       { opacity: 0 },
       { opacity: 1, duration: 1.8, ease: 'power2.out', delay: 1.4 }
     )
   }, [])
+
+  /* White fade on drop click → navigate to route after fade */
+  useEffect(() => {
+    const handleDropClick = (e) => {
+      const route = e.detail?.data?.route
+      setWhiteFade(true)
+      if (route) {
+        // Wait for the 1s fade transition to complete, then navigate
+        setTimeout(() => {
+          navigate(route)
+        }, 1050)
+      }
+    }
+    window.addEventListener('dropletclick', handleDropClick)
+    return () => window.removeEventListener('dropletclick', handleDropClick)
+  }, [navigate])
+
+  const dismissFade = () => {
+    setWhiteFade(false)
+    dropClickBus.active = false
+    dropClickBus.targetPos = null
+  }
 
   return (
     <>
@@ -57,7 +87,7 @@ export default function App() {
       {/* ── Fixed Three.js canvas ────────────────────────────── */}
       <div className="canvas-container">
         <Canvas
-          camera={{ position: [12, 2, 12], fov: 55, near: 0.1, far: 600 }}
+          camera={{ position: [12, 66, 12], fov: 55, near: 0.1, far: 600 }}
           gl={{
             antialias: true,
             alpha: false,
@@ -70,13 +100,16 @@ export default function App() {
         </Canvas>
       </div>
 
+      {/* ── White fade overlay ────────────────────────────── */}
+      <div
+        className={`white-fade${whiteFade ? ' visible' : ''}`}
+        onClick={dismissFade}
+      />
+
       {/* ── UI Overlay ──────────────────────────────────────── */}
       <div className="ui-overlay">
-        {/* Hero */}
-        <div className="hero-title">
-          <h1>Your Name</h1>
-          <p>Designer &amp; Developer · In the clouds</p>
-        </div>
+        {/* Navbar */}
+        <Navbar />
 
         {/* Section label */}
         <div className={`section-label ${activeSection && scrolled ? 'visible' : ''}`}>
@@ -86,14 +119,6 @@ export default function App() {
               <p>{activeSection.tag} · {activeSection.year}</p>
             </>
           )}
-        </div>
-
-        {/* Progress bar */}
-        <div className="progress-bar">
-          <div
-            className="progress-fill"
-            style={{ height: `${scrollProgress * 100}%` }}
-          />
         </div>
 
         {/* Scroll hint */}

@@ -5,6 +5,14 @@ import * as THREE from 'three'
 import { allDroplets } from '../data/portfolio'
 
 /* ──────────────────────────────────────────────────────────────
+   Shared click signal — read by ScrollCamera in Scene.jsx
+   ────────────────────────────────────────────────────────────── */
+export const dropClickBus = {
+  active: false,
+  targetPos: null, // THREE.Vector3 of the clicked drop's world position
+}
+
+/* ──────────────────────────────────────────────────────────────
    Stalk curve definition (exported so ScrollCamera can query it)
    ────────────────────────────────────────────────────────────── */
 function buildStalkCurve() {
@@ -272,10 +280,24 @@ function useWaterDropAnimation(root) {
 function WaterDropHoverOverlay() {
   const groupRef = useRef()
   const [hoveredData, setHoveredData] = useState(null)
-  const { raycaster, pointer } = useThree()
+  const { raycaster, pointer, gl } = useThree()
   const prevHovered = useRef(null)
   const tmpPos = useRef(new THREE.Vector3())
   const sphere = useRef(new THREE.Sphere())
+
+  // Click listener — fires zoom + white fade when a drop is clicked
+  useEffect(() => {
+    const handleClick = () => {
+      if (!prevHovered.current) return
+      const wp = new THREE.Vector3()
+      prevHovered.current.getWorldPosition(wp)
+      dropClickBus.active = true
+      dropClickBus.targetPos = wp.clone()
+      window.dispatchEvent(new CustomEvent('dropletclick', { detail: { data: prevHovered.current.userData.dropData } }))
+    }
+    gl.domElement.addEventListener('click', handleClick)
+    return () => gl.domElement.removeEventListener('click', handleClick)
+  }, [gl])
 
   useFrame(({ camera }) => {
     if (waterDropRefs.current.length === 0) return
@@ -309,7 +331,7 @@ function WaterDropHoverOverlay() {
         <Html center distanceFactor={9} zIndexRange={[50, 0]} style={{ pointerEvents: 'none' }}>
           <div className="speech-bubble">
             <span className="speech-bubble-tag">{hoveredData.tag}</span>
-            <strong className="speech-bubble-title">{hoveredData.title}</strong>
+            <strong className="speech-bubble-title">{hoveredData.bubbleLabel || hoveredData.title}</strong>
             {hoveredData.year && (
               <span className="speech-bubble-year">{hoveredData.year}</span>
             )}
