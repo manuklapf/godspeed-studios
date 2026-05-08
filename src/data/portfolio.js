@@ -15,13 +15,24 @@
 
 export const caseStudies = [
   {
+    id: 'cs-0',
+    type: 'case-study',
+    tag: 'Case Study',
+    title: 'Second-Hand Marketplace',
+    bubbleLabel: 'Marketplace UI/UX',
+    description:
+      'A full UI/UX case study for a peer-to-peer resale platform — from discovery research through to high-fidelity Figma prototypes.',
+    link: null,
+    year: '2025',
+  },
+  {
     id: 'cs-1',
     type: 'case-study',
     tag: 'Case Study',
-    title: 'Ethereal Design System',
+    title: 'Fashion Campaign',
     description:
-      "A comprehensive design system built for a fintech product. Reduced design-to-dev handoff time by 60% and unified the product's visual language.",
-    link: 'https://your-project-link.com',
+      "A conceptual fashion campaign exploring texture, form, and identity through 3D art direction and physical-digital object design.",
+    link: null,
     year: '2024',
   },
   {
@@ -76,9 +87,10 @@ export const references = [
    Index 0 = the lowest GLB WaterDrop mesh, index N = the highest.
    ───────────────────────────────────────────────────────────────── */
 export const allDroplets = [
-  { ...caseStudies[0], route: '/project/ethereal-design-system' },
+  { ...caseStudies[0], route: '/marketplace-case-study' },
+  { ...caseStudies[1], route: '/fashion-campaign' },
   { ...references[0],  route: '/video-photography', bubbleLabel: 'Video & Photography Work' },
-  { ...caseStudies[1], route: '/project/cloud-commerce' },
-  { ...caseStudies[2], route: '/project/immersive-data' },
+  { ...caseStudies[2], route: '/project/cloud-commerce' },
+  { ...caseStudies[3], route: '/project/immersive-data' },
   { ...references[1],  route: '/project/reference' },
 ]
