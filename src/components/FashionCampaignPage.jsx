@@ -4,6 +4,7 @@ import { useGLTF, OrbitControls } from "@react-three/drei";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import * as THREE from "three";
 import PageWrapper from "./PageWrapper";
+import { fashionCampaignPlanes } from "../data/fashionCampaignPlanes";
 
 /* ─── Black background ──────────────────────────────────────────── */
 function SceneBackground() {
@@ -78,9 +79,11 @@ function GashaponModel({ controlsRef }) {
   const isHoveringRef = useRef(false);
   const lookTargetRef = useRef(new THREE.Vector3());
   const cameraFocusRef = useRef(null);
+  const selectedPlaneConfigRef = useRef(null);
+  const audioRef = useRef(null);
 
-  const focusCameraOnPaper = () => {
-    const paper = gltfScene.getObjectByName("Plane");
+  const focusCameraOnPaper = (planeName) => {
+    const paper = gltfScene.getObjectByName(planeName);
     if (!paper) return;
 
     gltfScene.updateMatrixWorld(true);
@@ -144,6 +147,9 @@ function GashaponModel({ controlsRef }) {
   useEffect(() => {
     if (!gltfScene || !groupRef.current) return;
 
+    audioRef.current = new Audio();
+    audioRef.current.preload = "auto";
+
     /* ── HDR environment (matches original RGBELoader setup) ─ */
     hdrTexture.mapping = THREE.EquirectangularRefractionMapping;
     r3fScene.environment = hdrTexture;
@@ -161,6 +167,16 @@ function GashaponModel({ controlsRef }) {
       -centre.y * scale + 0.1,
       -centre.z * scale,
     );
+    groupRef.current.updateMatrixWorld(true);
+
+    const modelCenter = new THREE.Box3()
+      .setFromObject(groupRef.current)
+      .getCenter(new THREE.Vector3());
+    camera.lookAt(modelCenter);
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(modelCenter);
+      controlsRef.current.update();
+    }
 
     /* ── Glass material (MeshPhysicalMaterial, matches original) */
     const glassMaterial = new THREE.MeshPhysicalMaterial({
@@ -214,10 +230,20 @@ function GashaponModel({ controlsRef }) {
       actionsRef.current[clip.name] = action;
     });
 
-    // After PlaneAction finishes, frame the paper front-on.
+    // After the selected plane action finishes, frame that plane and play its audio.
     const onFinished = (e) => {
-      if (e.action === actionsRef.current["PlaneAction"]) {
-        focusCameraOnPaper();
+      const selectedPlaneConfig = selectedPlaneConfigRef.current;
+      if (!selectedPlaneConfig) return;
+
+      if (e.action === actionsRef.current[selectedPlaneConfig.actionName]) {
+        focusCameraOnPaper(selectedPlaneConfig.planeName);
+
+        if (audioRef.current && selectedPlaneConfig.audioSrc) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = selectedPlaneConfig.audioSrc;
+          audioRef.current.play().catch(() => {});
+        }
       }
     };
     mixer.addEventListener("finished", onFinished);
@@ -225,11 +251,16 @@ function GashaponModel({ controlsRef }) {
     return () => {
       mixer.removeEventListener("finished", onFinished);
       mixer.stopAllAction();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
       document.body.style.cursor = "default";
       r3fScene.environment = null;
       r3fScene.environmentIntensity = 1;
     };
-  }, [gltfScene, r3fScene, animations, hdrTexture]);
+  }, [gltfScene, r3fScene, animations, hdrTexture, camera, controlsRef]);
 
   /* ── Per-frame: tick mixer, rotation, cube cam update ────── */
   useFrame((_, delta) => {
@@ -286,12 +317,13 @@ function GashaponModel({ controlsRef }) {
       if (turnerGlowRef.current) turnerGlowRef.current.visible = true;
       if (planeGlowRef.current) planeGlowRef.current.visible = false;
       document.body.style.cursor = "pointer";
-    } else if (onPlane && turnerClickedRef.current) {
-      if (planeGlowRef.current) planeGlowRef.current.visible = true;
-      document.body.style.cursor = "pointer";
+      // 8.5.26: disabled paper plane hover state
+      // } else if (onPlane && turnerClickedRef.current) {
+      //   if (planeGlowRef.current) planeGlowRef.current.visible = true;
+      //   document.body.style.cursor = "pointer";
     } else {
       if (turnerGlowRef.current) turnerGlowRef.current.visible = false;
-      if (planeGlowRef.current) planeGlowRef.current.visible = false;
+      // if (planeGlowRef.current) planeGlowRef.current.visible = false;
       document.body.style.cursor = "default";
     }
   };
@@ -310,26 +342,42 @@ function GashaponModel({ controlsRef }) {
 
     // ── Turner crank → trigger vending sequence
     if (findNamed(e.object, "Turner") && !turnerClickedRef.current) {
+      const selectedPlaneConfig =
+        fashionCampaignPlanes[
+          Math.floor(Math.random() * fashionCampaignPlanes.length)
+        ] ?? null;
+
+      console.log("Selected plane config:", selectedPlaneConfig);
+
+      if (!selectedPlaneConfig || !a[selectedPlaneConfig.actionName]) return;
+
       turnerClickedRef.current = true;
       if (turnerGlowRef.current) turnerGlowRef.current.visible = false;
+      selectedPlaneConfigRef.current = selectedPlaneConfig;
+
       a["TurnerAction"]?.reset().play();
-      a["PlaneAction"]?.reset().play();
+      fashionCampaignPlanes.forEach(({ actionName }) => {
+        a[actionName]?.stop();
+      });
+      selectedPlaneConfig?.actionName &&
+        a[selectedPlaneConfig.actionName]?.reset().play();
       a["PriceballActionTop"]?.reset().play();
       a["PriceballActionBottom"]?.reset().play();
     }
 
-    // ── Plane (ticket) → burst particles
-    if (
-      findNamed(e.object, "Plane") &&
-      turnerClickedRef.current &&
-      !planeAnimStartedRef.current
-    ) {
-      planeAnimStartedRef.current = true;
-      if (planeGlowRef.current) planeGlowRef.current.visible = false;
-      for (let x = 20; x <= 34; x++) {
-        a[`particle.0${x}Action`]?.reset().play();
-      }
-    }
+    // 8.5.26: disabled burst star particles
+    // // ── Plane (ticket) → burst particles
+    // if (
+    //   findNamed(e.object, "Plane") &&
+    //   turnerClickedRef.current &&
+    //   !planeAnimStartedRef.current
+    // ) {
+    //   planeAnimStartedRef.current = true;
+    //   if (planeGlowRef.current) planeGlowRef.current.visible = false;
+    //   for (let x = 20; x <= 34; x++) {
+    //     a[`particle.0${x}Action`]?.reset().play();
+    //   }
+    // }
   };
 
   return (
