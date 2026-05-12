@@ -14,7 +14,7 @@ html {
 body {
   background: #c2dff0;
   overflow-x: hidden;
-  font-family: 'League Spartan', sans-serif;
+  font-family: "League Spartan", sans-serif;
   color: #2a4a3a;
 }
 
@@ -92,8 +92,10 @@ body {
   margin-left: 2.5rem;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-links .nav-contact-btn {
   text-decoration: none;
+  font-family: "League Spartan", sans-serif;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -109,13 +111,27 @@ body {
 }
 
 @keyframes wiggle {
-  0%   { transform: rotate(0deg)    translateX(0); }
-  15%  { transform: rotate(-4deg)   translateX(-2px); }
-  30%  { transform: rotate(4deg)    translateX(2px); }
-  45%  { transform: rotate(-3deg)   translateX(-1px); }
-  60%  { transform: rotate(3deg)    translateX(1px); }
-  75%  { transform: rotate(-1.5deg) translateX(0); }
-  100% { transform: rotate(0deg)    translateX(0); }
+  0% {
+    transform: rotate(0deg) translateX(0);
+  }
+  15% {
+    transform: rotate(-4deg) translateX(-2px);
+  }
+  30% {
+    transform: rotate(4deg) translateX(2px);
+  }
+  45% {
+    transform: rotate(-3deg) translateX(-1px);
+  }
+  60% {
+    transform: rotate(3deg) translateX(1px);
+  }
+  75% {
+    transform: rotate(-1.5deg) translateX(0);
+  }
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
 }
 
 /* Wiggle re-triggered on hover */
@@ -125,13 +141,27 @@ body {
 }
 
 @keyframes wiggle-hover {
-  0%   { transform: rotate(0deg)    translateX(0); }
-  15%  { transform: rotate(-4deg)   translateX(-2px); }
-  30%  { transform: rotate(4deg)    translateX(2px); }
-  45%  { transform: rotate(-3deg)   translateX(-1px); }
-  60%  { transform: rotate(3deg)    translateX(1px); }
-  75%  { transform: rotate(-1.5deg) translateX(0); }
-  100% { transform: rotate(0deg)    translateX(0); }
+  0% {
+    transform: rotate(0deg) translateX(0);
+  }
+  15% {
+    transform: rotate(-4deg) translateX(-2px);
+  }
+  30% {
+    transform: rotate(4deg) translateX(2px);
+  }
+  45% {
+    transform: rotate(-3deg) translateX(-1px);
+  }
+  60% {
+    transform: rotate(3deg) translateX(1px);
+  }
+  75% {
+    transform: rotate(-1.5deg) translateX(0);
+  }
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
 }
 
 .hamburger-menu {
@@ -231,7 +261,7 @@ body {
 }
 
 .section-label h2 {
-  font-family: 'League Spartan', sans-serif;
+  font-family: "League Spartan", sans-serif;
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 0 16px rgba(120, 210, 180, 0.8);
@@ -282,8 +312,15 @@ body {
 }
 
 @keyframes arrowBounce {
-  0%, 100% { transform: rotate(-135deg) translateY(-15px) translateX(-15px); opacity: 0.4; }
-  50%       { transform: rotate(-135deg) translateY(-9px) translateX(-9px); opacity: 1; }
+  0%,
+  100% {
+    transform: rotate(-135deg) translateY(-15px) translateX(-15px);
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(-135deg) translateY(-9px) translateX(-9px);
+    opacity: 1;
+  }
 }
 
 /* ─── Droplet Info Card (rendered via Html / portal) ─────────── */
@@ -305,8 +342,14 @@ body {
 }
 
 @keyframes cardReveal {
-  from { opacity: 0; transform: scale(0.85) translateY(10px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .droplet-card .card-tag {
@@ -319,7 +362,7 @@ body {
 }
 
 .droplet-card h3 {
-  font-family: 'League Spartan', sans-serif;
+  font-family: "League Spartan", sans-serif;
   font-size: 1rem;
   color: #1a3a2a;
   margin-bottom: 0.4rem;
@@ -342,7 +385,9 @@ body {
   text-decoration: none;
   border-bottom: 1px solid rgba(61, 140, 96, 0.4);
   padding-bottom: 1px;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .droplet-card a:hover {
@@ -412,7 +457,7 @@ body {
 
 /* White fill tail */
 .speech-bubble::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -7px;
   left: 50%;
@@ -423,8 +468,14 @@ body {
 }
 
 @keyframes bubblePop {
-  from { opacity: 0; transform: scale(0.82) translateY(5px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .speech-bubble-tag {
@@ -438,7 +489,7 @@ body {
 
 .speech-bubble-title {
   display: block;
-  font-family: 'League Spartan', sans-serif;
+  font-family: "League Spartan", sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
   color: #111111;
@@ -472,10 +523,21 @@ body {
 
 /* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .section-label { right: 1rem; }
-  .progress-bar  { left: 0.8rem; height: 80px; }
-  .hero-title h1 { font-size: 2rem; }
-  .droplet-card  { min-width: 180px; max-width: 240px; padding: 1rem 1.2rem; }
+  .section-label {
+    right: 1rem;
+  }
+  .progress-bar {
+    left: 0.8rem;
+    height: 80px;
+  }
+  .hero-title h1 {
+    font-size: 2rem;
+  }
+  .droplet-card {
+    min-width: 180px;
+    max-width: 240px;
+    padding: 1rem 1.2rem;
+  }
 }
 
 /* ─── Page Fade Overlay (fade in from white on new pages) ──── */
@@ -529,7 +591,10 @@ body {
   text-transform: uppercase;
   color: rgba(160, 210, 175, 0.7);
   cursor: pointer;
-  transition: color 0.25s, border-color 0.25s, background 0.25s;
+  transition:
+    color 0.25s,
+    border-color 0.25s,
+    background 0.25s;
 }
 
 .page-back-btn:hover {
@@ -593,7 +658,9 @@ body {
   text-decoration: none;
   border-bottom: 1px solid rgba(74, 154, 100, 0.5);
   padding-bottom: 3px;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .project-link:hover {
@@ -649,16 +716,36 @@ body {
     "fl fl fm fm fr fr";
 }
 
-.vp-topleft   { grid-area: tl; }
-.vp-topright  { grid-area: tr; }
-.vp-secleft   { grid-area: sl; }
-.vp-secright  { grid-area: sr; }
-.vp-thileft   { grid-area: hl; }
-.vp-tmiddle   { grid-area: hm; }
-.vp-tright    { grid-area: hr; }
-.vp-fouleft   { grid-area: fl; }
-.vp-foumiddle { grid-area: fm; }
-.vp-fouright  { grid-area: fr; }
+.vp-topleft {
+  grid-area: tl;
+}
+.vp-topright {
+  grid-area: tr;
+}
+.vp-secleft {
+  grid-area: sl;
+}
+.vp-secright {
+  grid-area: sr;
+}
+.vp-thileft {
+  grid-area: hl;
+}
+.vp-tmiddle {
+  grid-area: hm;
+}
+.vp-tright {
+  grid-area: hr;
+}
+.vp-fouleft {
+  grid-area: fl;
+}
+.vp-foumiddle {
+  grid-area: fm;
+}
+.vp-fouright {
+  grid-area: fr;
+}
 
 .vp-cell {
   position: relative;
@@ -736,7 +823,10 @@ body {
   align-items: center;
   justify-content: center;
   color: rgba(190, 235, 205, 0.85);
-  transition: border-color 0.3s, transform 0.3s, color 0.3s;
+  transition:
+    border-color 0.3s,
+    transform 0.3s,
+    color 0.3s;
 }
 
 .mc-video:not(.playing):hover .mc-play-icon {
@@ -788,10 +878,16 @@ body {
     grid-auto-rows: 80vw;
   }
 
-  .vp-topleft, .vp-topright,
-  .vp-secleft, .vp-secright,
-  .vp-thileft, .vp-tmiddle, .vp-tright,
-  .vp-fouleft, .vp-foumiddle, .vp-fouright {
+  .vp-topleft,
+  .vp-topright,
+  .vp-secleft,
+  .vp-secright,
+  .vp-thileft,
+  .vp-tmiddle,
+  .vp-tright,
+  .vp-fouleft,
+  .vp-foumiddle,
+  .vp-fouright {
     grid-area: unset;
   }
 }
@@ -854,7 +950,10 @@ body {
   text-transform: uppercase;
   color: rgba(160, 210, 175, 0.7);
   cursor: pointer;
-  transition: color 0.25s, border-color 0.25s, background 0.25s;
+  transition:
+    color 0.25s,
+    border-color 0.25s,
+    background 0.25s;
 }
 .cs-back-btn:hover {
   color: rgba(200, 240, 210, 0.95);
@@ -926,7 +1025,9 @@ body {
   overflow: hidden;
   background: #080e09;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
 }
 .cs-frame-card:hover .cs-frame-img-wrap {
   border-color: rgba(74, 154, 100, 0.3);
@@ -1024,8 +1125,12 @@ body {
   animation: lb-in 0.22s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 @keyframes lb-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .cs-lb-content {
@@ -1085,7 +1190,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   z-index: 1000;
 }
 .cs-lb-close:hover {
@@ -1105,7 +1212,9 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .cs-lb-arrow:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -1118,9 +1227,10 @@ body {
 }
 
 @font-face {
-  font-family: 'PicNic';
-  src: url('/PicNic.woff2') format('woff2'),
-       url('/PicNic.woff') format('woff');
+  font-family: "PicNic";
+  src:
+    url("/PicNic.woff2") format("woff2"),
+    url("/PicNic.woff") format("woff");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -1181,7 +1291,9 @@ body {
   padding: 56px 16px 12px;
   scrollbar-width: none;
 }
-.mk-sb-cats::-webkit-scrollbar { display: none; }
+.mk-sb-cats::-webkit-scrollbar {
+  display: none;
+}
 
 .mk-sb-cat {
   margin-bottom: 4px;
@@ -1202,7 +1314,9 @@ body {
   text-align: left;
   letter-spacing: 0.01em;
 }
-.mk-sb-cat-hd:hover { color: #000; }
+.mk-sb-cat-hd:hover {
+  color: #000;
+}
 
 .mk-sb-items {
   list-style: none;
@@ -1221,11 +1335,13 @@ body {
   border-radius: 4px;
   transition: background 0.15s;
 }
-.mk-sb-items li:hover { background: rgba(0,0,0,0.06); }
+.mk-sb-items li:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
 
 .mk-sb-footer {
   padding: 10px 16px 14px;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1242,7 +1358,9 @@ body {
   cursor: pointer;
   transition: color 0.15s;
 }
-.mk-sb-footer-row span:hover { color: #333; }
+.mk-sb-footer-row span:hover {
+  color: #333;
+}
 
 .mk-sb-cart {
   display: flex;
@@ -1272,7 +1390,9 @@ body {
   overflow-y: auto;
   scrollbar-width: none;
 }
-.mk-scroll::-webkit-scrollbar { display: none; }
+.mk-scroll::-webkit-scrollbar {
+  display: none;
+}
 
 /* ── Image grid ──────────────────────────────────────────────── */
 .mk-grid {
@@ -1324,7 +1444,7 @@ body {
   font-size: 1.25rem;
   letter-spacing: 0.24em;
   color: #ffffff;
-  font-family: 'PicNic', Georgia, 'Times New Roman', serif;
+  font-family: "PicNic", Georgia, "Times New Roman", serif;
   pointer-events: none;
   white-space: nowrap;
 }
@@ -1350,7 +1470,9 @@ body {
   flex-shrink: 0;
   transition: background 0.15s;
 }
-.mk-icon-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.mk-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
 
 .mk-search-bar {
   display: flex;
@@ -1406,7 +1528,9 @@ body {
   color: rgba(255, 255, 255, 0.9);
   transition: background 0.15s;
 }
-.mk-cart-btn:hover { background: rgba(0, 0, 0, 0.72); }
+.mk-cart-btn:hover {
+  background: rgba(0, 0, 0, 0.72);
+}
 
 .mk-zoom-pill {
   display: flex;
@@ -1466,7 +1590,9 @@ body {
   pointer-events: none;
   opacity: 0;
   transform: scale(0.86);
-  transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .mk-overlay.open {
@@ -1495,7 +1621,9 @@ body {
   position: relative;
   background: #f2f2f2;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   padding: 14px 16px 16px;
@@ -1512,11 +1640,13 @@ body {
   gap: 14px;
   min-height: 0;
 }
-.mk-ov-scroll::-webkit-scrollbar { display: none; }
+.mk-ov-scroll::-webkit-scrollbar {
+  display: none;
+}
 
 /* Filter tail — points up toward filter button (~37px from left of overlay) */
 .mk-filter-overlay .mk-ov-inner::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -7px;
   left: 30px;
@@ -1529,7 +1659,7 @@ body {
 
 /* Cart tail — points down toward cart button (~44px center from overlay left) */
 .mk-cart-overlay .mk-ov-inner::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -7px;
   left: 37px;
@@ -1564,7 +1694,9 @@ body {
   line-height: 1;
   transition: color 0.15s;
 }
-.mk-ov-close:hover { color: #111; }
+.mk-ov-close:hover {
+  color: #111;
+}
 
 .mk-ov-section {
   display: flex;
@@ -1595,7 +1727,10 @@ body {
   font-size: 0.62rem;
   color: #333;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   white-space: nowrap;
 }
 .mk-chip:hover {
@@ -1649,7 +1784,9 @@ body {
   letter-spacing: 0.12em;
   transition: background 0.15s;
 }
-.mk-ov-apply:hover { background: #333; }
+.mk-ov-apply:hover {
+  background: #333;
+}
 
 /* ── Cart overlay items ──────────────────────────────────────── */
 .mk-cart-item {
@@ -1731,8 +1868,16 @@ body {
     border-radius: 0;
     aspect-ratio: 3 / 4;
   }
-  .mk-nav    { top: 10px; left: 10px; right: 10px; }
-  .mk-bottom { bottom: 10px; left: 10px; right: 10px; }
+  .mk-nav {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .mk-bottom {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+  }
 
   /* Transparent nav bar */
   .mk-nav {
@@ -1741,7 +1886,9 @@ body {
     -webkit-backdrop-filter: none;
     box-shadow: none;
   }
-  .mk-brand { display: none; }
+  .mk-brand {
+    display: none;
+  }
 
   /* Toggle button — standalone round */
   .mk-nav > .mk-icon-btn {
@@ -1768,7 +1915,9 @@ body {
   }
 
   /* Hide search bar, show search button */
-  .mk-search-bar { display: none; }
+  .mk-search-bar {
+    display: none;
+  }
   .mk-search-btn {
     display: flex;
     align-items: center;
@@ -1784,7 +1933,9 @@ body {
   }
 
   /* Cart button round, zoom hidden */
-  .mk-zoom-pill { display: none; }
+  .mk-zoom-pill {
+    display: none;
+  }
   .mk-cart-btn {
     width: 44px;
     height: 44px;
@@ -1881,6 +2032,7 @@ body {
 }
 
 .fc-canvas-wrap {
+  position: relative;
   width: 100%;
   height: clamp(340px, 56vw, 680px);
   border-radius: 12px;
@@ -1892,10 +2044,103 @@ body {
     inset 0 0 60px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Body text ───────────────────────────────────────────────── */
+/* ── Canvas overlay (3D arcade prompt) ───────────────────────── */
+.fc-canvas-overlay {
+  position: absolute;
+  bottom: 1.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fc-canvas-overlay--clickable {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.fc-overlay-text {
+  display: block;
+  font-family: "League Spartan", sans-serif;
+  font-weight: 900;
+  font-size: clamp(0.75rem, 1.8vw, 1.05rem);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #dde8f0;
+  /* 3D extrusion: stacked steel-blue shadow steps */
+  text-shadow:
+    0 1px 0 #b0bece,
+    0 2px 0 #7e909e,
+    0 3px 0 #556070,
+    0 4px 0 #333e48,
+    0 5px 10px rgba(0, 0, 0, 0.95),
+    /* arcade lights glow — cyan + pink matching the scene */ 0 0 18px
+      rgba(68, 204, 255, 0.4),
+    0 0 50px rgba(255, 68, 204, 0.18);
+  transition:
+    text-shadow 0.25s ease,
+    color 0.25s ease;
+}
+
+@keyframes fc-prompt-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.fc-overlay-text--prompt {
+  animation: fc-prompt-pulse 2.6s ease-in-out infinite;
+}
+
+.fc-canvas-overlay--clickable:hover .fc-overlay-text {
+  color: #ffffff;
+  text-shadow:
+    0 1px 0 #c8d8e8,
+    0 2px 0 #98a8ba,
+    0 3px 0 #6a7a88,
+    0 4px 0 #404e58,
+    0 5px 10px rgba(0, 0, 0, 0.95),
+    0 0 24px rgba(68, 204, 255, 0.7),
+    0 0 60px rgba(255, 68, 204, 0.35);
+}
+
+.fc-canvas-overlay--clickable:active .fc-overlay-text--action {
+  transform: translateY(2px);
+}
+
+/* ── Mute toggle button ──────────────────────────────────────── */
+.fc-mute-btn {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fc-mute-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.fc-mute-btn:hover {
+  opacity: 0.7;
+}
+
 .fc-body {
   padding: 4rem 6vw 6rem;
-  border-top: 1px solid rgba(80, 110, 140, 0.08);
 }
 
 .fc-body-inner {
@@ -1929,8 +2174,178 @@ body {
 
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .fc-header { padding: 7rem 5vw 2.5rem; }
-  .fc-viewer-wrap { padding: 2.5rem 5vw 0; }
-  .fc-body { padding: 3rem 5vw 5rem; }
-  .fc-canvas-wrap { height: 60vw; min-height: 260px; }
+  .fc-header {
+    padding: 7rem 5vw 2.5rem;
+  }
+  .fc-viewer-wrap {
+    padding: 2.5rem 5vw 0;
+  }
+  .fc-body {
+    padding: 3rem 5vw 5rem;
+  }
+  .fc-canvas-wrap {
+    height: 60vw;
+    min-height: 260px;
+  }
+}
+
+/* ─── Contact nav button ─────────────────────────────────────── */
+.nav-contact-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+/* ─── Contact modal ──────────────────────────────────────────── */
+.contact-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.contact-modal {
+  position: relative;
+  background: #0e1318;
+  border: 1px solid rgba(100, 140, 180, 0.18);
+  border-radius: 14px;
+  padding: 2.8rem 2.8rem 2.4rem;
+  max-width: 440px;
+  width: 100%;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.7),
+    inset 0 0 40px rgba(0, 0, 0, 0.3);
+}
+
+.contact-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: rgba(180, 210, 225, 0.45);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+.contact-close svg {
+  width: 18px;
+  height: 18px;
+}
+.contact-close:hover {
+  color: #dde8f0;
+}
+
+.contact-eyebrow {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #6a9ab8;
+  margin-bottom: 0.6rem;
+}
+
+.contact-title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: #dde8f0;
+  margin: 0 0 1.2rem;
+  line-height: 1.1;
+}
+
+.contact-body {
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: #ffffff;
+  margin: 0 0 1.4rem;
+}
+
+.contact-details {
+  margin: 0 0 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.contact-line {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #ffffff;
+  margin: 0;
+}
+
+.contact-line--email {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contact-icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(180, 210, 225, 0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+.contact-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.contact-icon-btn:hover {
+  color: #dde8f0;
+}
+
+.contact-legal {
+  font-size: 0.7rem;
+  line-height: 1.7;
+  color: rgba(180, 210, 225, 0.3);
+  margin: 0 0 1.8rem;
+  border-top: 1px solid rgba(100, 140, 180, 0.1);
+  padding-top: 1rem;
+}
+
+.contact-send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: none;
+  border: 1px solid rgba(100, 140, 180, 0.28);
+  border-radius: 8px;
+  color: rgba(180, 210, 225, 0.7);
+  font-family: "League Spartan", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.contact-send-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.contact-send-btn:hover {
+  border-color: rgba(100, 160, 210, 0.55);
+  color: #dde8f0;
 }

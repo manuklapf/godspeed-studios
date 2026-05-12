@@ -1,10 +1,32 @@
-import React, { useRef, useEffect, Suspense } from "react";
+import React, { useRef, useEffect, Suspense, useState } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { useGLTF, OrbitControls } from "@react-three/drei";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import * as THREE from "three";
 import PageWrapper from "./PageWrapper";
+import MuteButton from "./MuteButton";
+import CanvasOverlay from "./CanvasOverlay";
+import { useMuted } from "../hooks/useMuted";
+import { findNamed } from "../utils/threeUtils";
 import { fashionCampaignPlanes } from "../data/fashionCampaignPlanes";
+
+/* ─── Audio crossfade helper ────────────────────────────────────── */
+function fadeAudio(audio, targetVol, durationMs = 800) {
+  if (!audio) return;
+  const startVol = audio.volume;
+  const steps = 20;
+  const stepTime = durationMs / steps;
+  const delta = (targetVol - startVol) / steps;
+  let step = 0;
+  const id = setInterval(() => {
+    step++;
+    audio.volume = Math.max(0, Math.min(1, startVol + delta * step));
+    if (step >= steps) {
+      clearInterval(id);
+      if (targetVol === 0) audio.pause();
+    }
+  }, stepTime);
+}
 
 /* ─── Black background ──────────────────────────────────────────── */
 function SceneBackground() {
@@ -54,19 +76,16 @@ function ArcadeLights() {
   );
 }
 
-/* ─── Walk up the object tree to find a named ancestor ──────── */
-function findNamed(obj, name) {
-  let node = obj;
-  while (node) {
-    if (node.name === name) return node;
-    node = node.parent;
-  }
-  return null;
-}
-
 /* ─── The model — with animations, glass, and interactions ──── */
-function GashaponModel({ controlsRef }) {
-  const { scene: gltfScene, animations } = useGLTF("/gashapon_updated.glb");
+function GashaponModel({
+  controlsRef,
+  onPlaneFinished,
+  onTurnerClicked,
+  mutedRef,
+  muted,
+  resetRef,
+}) {
+  const { scene: gltfScene, animations } = useGLTF("/gashapon.glb");
   const hdrTexture = useLoader(RGBELoader, "/warehouse_02_1k.hdr");
   const { scene: r3fScene, camera } = useThree();
   const groupRef = useRef();
@@ -81,6 +100,49 @@ function GashaponModel({ controlsRef }) {
   const cameraFocusRef = useRef(null);
   const selectedPlaneConfigRef = useRef(null);
   const audioRef = useRef(null);
+  const modelCenterRef = useRef(new THREE.Vector3());
+  const onPlaneFinishedRef = useRef(onPlaneFinished);
+  useEffect(() => {
+    onPlaneFinishedRef.current = onPlaneFinished;
+  }, [onPlaneFinished]);
+  const onTurnerClickedRef = useRef(onTurnerClicked);
+  useEffect(() => {
+    onTurnerClickedRef.current = onTurnerClicked;
+  }, [onTurnerClicked]);
+
+  // Keep audio element in sync with the mute button
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
+
+  // Expose reset function so the overlay button can restart the interaction.
+  if (resetRef) {
+    resetRef.current = () => {
+      if (mixerRef.current) mixerRef.current.stopAllAction();
+      turnerClickedRef.current = false;
+      planeAnimStartedRef.current = false;
+      selectedPlaneConfigRef.current = null;
+      cameraFocusRef.current = null;
+      if (audioRef.current) {
+        fadeAudio(audioRef.current, 0, 600);
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
+        }, 620);
+      }
+      // Restore camera to its initial position and look target.
+      camera.position.set(0, 1.2, 6);
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(modelCenterRef.current);
+        controlsRef.current.enabled = true;
+        controlsRef.current.update();
+      } else {
+        camera.lookAt(modelCenterRef.current);
+      }
+    };
+  }
 
   const focusCameraOnPaper = (planeName) => {
     const paper = gltfScene.getObjectByName(planeName);
@@ -108,6 +170,14 @@ function GashaponModel({ controlsRef }) {
       .crossVectors(new THREE.Vector3(0, 1, 0), approachDirection)
       .normalize();
     approachDirection.applyAxisAngle(pitchAxis, THREE.MathUtils.degToRad(35));
+    // If the pitch tilted the approach downward, reverse it so the camera
+    // always arrives from above the paper rather than from below.
+    if (approachDirection.y < 0) {
+      approachDirection.applyAxisAngle(
+        pitchAxis,
+        THREE.MathUtils.degToRad(120),
+      );
+    }
 
     const worldSize = focusBox.getSize(new THREE.Vector3());
     let paperWidth = Math.max(worldSize.x, 0.001);
@@ -148,7 +218,7 @@ function GashaponModel({ controlsRef }) {
     if (!gltfScene || !groupRef.current) return;
 
     audioRef.current = new Audio();
-    audioRef.current.preload = "auto";
+    audioRef.current.preload = "none";
 
     /* ── HDR environment (matches original RGBELoader setup) ─ */
     hdrTexture.mapping = THREE.EquirectangularRefractionMapping;
@@ -160,18 +230,20 @@ function GashaponModel({ controlsRef }) {
     const centre = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 3.2 / maxDim;
+    const scale = 2.8 / maxDim;
     groupRef.current.scale.setScalar(scale);
     groupRef.current.position.set(
       -centre.x * scale,
       -centre.y * scale + 0.1,
-      -centre.z * scale,
+      -centre.z * scale + 0.3,
     );
     groupRef.current.updateMatrixWorld(true);
 
     const modelCenter = new THREE.Box3()
       .setFromObject(groupRef.current)
       .getCenter(new THREE.Vector3());
+    modelCenterRef.current.copy(modelCenter);
+    camera.position.set(0, 1.2, 6);
     camera.lookAt(modelCenter);
     if (controlsRef.current) {
       controlsRef.current.target.copy(modelCenter);
@@ -237,12 +309,12 @@ function GashaponModel({ controlsRef }) {
 
       if (e.action === actionsRef.current[selectedPlaneConfig.actionName]) {
         focusCameraOnPaper(selectedPlaneConfig.planeName);
+        onPlaneFinishedRef.current?.();
 
-        if (audioRef.current && selectedPlaneConfig.audioSrc) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-          audioRef.current.src = selectedPlaneConfig.audioSrc;
-          audioRef.current.play().catch(() => {});
+        const danceAction = actionsRef.current["DanceLoop"];
+        if (danceAction) {
+          danceAction.setLoop(THREE.LoopRepeat, Infinity);
+          danceAction.reset().play();
         }
       }
     };
@@ -349,11 +421,31 @@ function GashaponModel({ controlsRef }) {
 
       console.log("Selected plane config:", selectedPlaneConfig);
 
-      if (!selectedPlaneConfig || !a[selectedPlaneConfig.actionName]) return;
+      if (
+        !selectedPlaneConfig ||
+        !a[selectedPlaneConfig.actionName] ||
+        !a[selectedPlaneConfig.danceActionName]
+      )
+        return;
 
       turnerClickedRef.current = true;
+      onTurnerClickedRef.current?.();
       if (turnerGlowRef.current) turnerGlowRef.current.visible = false;
       selectedPlaneConfigRef.current = selectedPlaneConfig;
+
+      if (!mutedRef.current)
+        new Audio("/audio/turn.mp3").play().catch(() => {});
+
+      // Start plane audio immediately on turner click (lazy-loaded here)
+      if (audioRef.current && selectedPlaneConfig.audioSrc) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.muted = mutedRef.current;
+        audioRef.current.src = selectedPlaneConfig.audioSrc;
+        audioRef.current.volume = 0;
+        audioRef.current.play().catch(() => {});
+        fadeAudio(audioRef.current, 1, 1000);
+      }
 
       a["TurnerAction"]?.reset().play();
       fashionCampaignPlanes.forEach(({ actionName }) => {
@@ -361,6 +453,8 @@ function GashaponModel({ controlsRef }) {
       });
       selectedPlaneConfig?.actionName &&
         a[selectedPlaneConfig.actionName]?.reset().play();
+      selectedPlaneConfig?.danceActionName &&
+        a[selectedPlaneConfig.danceActionName]?.reset().play();
       a["PriceballActionTop"]?.reset().play();
       a["PriceballActionBottom"]?.reset().play();
     }
@@ -393,7 +487,13 @@ function GashaponModel({ controlsRef }) {
 }
 
 /* ─── 3D Scene ──────────────────────────────────────────────── */
-function WarehouseScene() {
+function WarehouseScene({
+  onPlaneFinished,
+  onTurnerClicked,
+  mutedRef,
+  muted,
+  resetRef,
+}) {
   const controlsRef = useRef(null);
 
   return (
@@ -402,7 +502,14 @@ function WarehouseScene() {
       <ArcadeLights />
 
       <Suspense fallback={null}>
-        <GashaponModel controlsRef={controlsRef} />
+        <GashaponModel
+          controlsRef={controlsRef}
+          onPlaneFinished={onPlaneFinished}
+          onTurnerClicked={onTurnerClicked}
+          mutedRef={mutedRef}
+          muted={muted}
+          resetRef={resetRef}
+        />
       </Suspense>
 
       <OrbitControls
@@ -422,6 +529,45 @@ function WarehouseScene() {
 
 /* ─── Page ───────────────────────────────────────────────────── */
 export default function FashionCampaignPage() {
+  const [showNextBtn, setShowNextBtn] = useState(false);
+  const [turnerClicked, setTurnerClicked] = useState(false);
+  const { muted, setMuted, mutedRef } = useMuted();
+  const resetModelRef = useRef(null);
+  const menuAudioRef = useRef(null);
+
+  // Lazy-load menu music — crossfade with plane audio based on mute + turnerClicked
+  useEffect(() => {
+    if (!muted && !turnerClicked) {
+      if (!menuAudioRef.current) {
+        const audio = new Audio();
+        audio.src = "/audio/menu.mp3";
+        audio.loop = true;
+        audio.preload = "none";
+        menuAudioRef.current = audio;
+      }
+      menuAudioRef.current.volume = 0;
+      menuAudioRef.current.play().catch(() => {});
+      fadeAudio(menuAudioRef.current, 1, 800);
+    } else if (menuAudioRef.current) {
+      fadeAudio(menuAudioRef.current, 0, 600);
+    }
+  }, [muted, turnerClicked]);
+
+  useEffect(() => {
+    return () => {
+      if (menuAudioRef.current) {
+        menuAudioRef.current.pause();
+        menuAudioRef.current.src = "";
+      }
+    };
+  }, []);
+
+  const handleNextClick = () => {
+    resetModelRef.current?.();
+    setShowNextBtn(false);
+    setTurnerClicked(false);
+  };
+
   return (
     <PageWrapper>
       <section className="fc-page">
@@ -432,23 +578,21 @@ export default function FashionCampaignPage() {
             <br />
             Campaign
           </h1>
-          <p className="fc-subtitle">
-            A conceptual campaign exploring texture, form, and identity through
-            3D art direction and physical-digital object design.
-          </p>
-          <p className="fc-year">2024</p>
         </header>
 
         <div className="fc-viewer-wrap">
           <div className="fc-viewer-label">
-            <span className="fc-viewer-eyebrow">Interactive Object</span>
             <h2 className="fc-viewer-title">Gashapon</h2>
             <p className="fc-viewer-desc">Click the crank · drag to orbit</p>
           </div>
-
           <div className="fc-canvas-wrap">
             <Canvas
-              camera={{ position: [0, 1.2, 5], fov: 42, near: 0.1, far: 200 }}
+              camera={{
+                position: [0, 1.2, 6],
+                fov: 42,
+                near: 0.1,
+                far: 200,
+              }}
               gl={{
                 antialias: true,
                 alpha: false,
@@ -458,26 +602,40 @@ export default function FashionCampaignPage() {
               }}
               dpr={[1, 1.5]}
             >
-              <WarehouseScene />
+              <WarehouseScene
+                onPlaneFinished={() => setShowNextBtn(true)}
+                onTurnerClicked={() => setTurnerClicked(true)}
+                mutedRef={mutedRef}
+                muted={muted}
+                resetRef={resetModelRef}
+              />
             </Canvas>
+            <MuteButton muted={muted} onToggle={() => setMuted((m) => !m)} />
+            {!turnerClicked && !showNextBtn && (
+              <CanvasOverlay
+                text="↻ Click crank to draw your character"
+                pulse
+              />
+            )}
+            {showNextBtn && (
+              <CanvasOverlay text="↺ Draw again" onClick={handleNextClick} />
+            )}
           </div>
         </div>
 
         <div className="fc-body">
           <div className="fc-body-inner">
             <span className="fc-section-eyebrow">Concept</span>
-            <h2 className="fc-section-title">Object as Character</h2>
+            <h2 className="fc-section-title">Draw Your Tattoo</h2>
             <p className="fc-section-text">
-              The gashapon machine is a cultural artefact — equal parts vending
-              machine, lottery, and collectible showcase. This campaign reframes
-              it as a hero object: isolated, lit harshly under warehouse
-              fluorescents, stripped of its usual context to reveal its
-              sculptural quality.
+              The gashapon machine is reimagined as a tattoo oracle. Turn the
+              crank, and chance decides your character. Each capsule holds a
+              design you might wear permanently.
             </p>
             <p className="fc-section-text">
-              The tension between the object's playful origins and the severity
-              of the industrial setting is the visual thesis: mass-produced
-              things, made strange by attention.
+              The campaign sits at the intersection of collectible culture and
+              body art. The machine becomes the artist, the wearer becomes the
+              canvas, and commitment is the only rule.
             </p>
           </div>
         </div>
