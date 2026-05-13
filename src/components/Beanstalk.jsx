@@ -275,6 +275,79 @@ function useWaterDropAnimation(root) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   DropLabel — persistent Html bubble above a single drop (mobile)
+   ────────────────────────────────────────────────────────────── */
+function DropLabel({ node }) {
+  const groupRef = useRef()
+  const sphere = useRef(new THREE.Sphere())
+
+  useFrame(() => {
+    if (!groupRef.current || !node.geometry) return
+    // Compute bounding sphere once (geometry is static)
+    if (!node.geometry.boundingSphere) node.geometry.computeBoundingSphere()
+    sphere.current.copy(node.geometry.boundingSphere)
+    sphere.current.applyMatrix4(node.matrixWorld)
+    groupRef.current.position.set(
+      sphere.current.center.x,
+      sphere.current.center.y + sphere.current.radius + 0.35,
+      sphere.current.center.z,
+    )
+  })
+
+  const data = node.userData.dropData
+  if (!data) return null
+
+  return (
+    <group ref={groupRef} position={[0, -1000, 0]}>
+      <Html
+        center
+        distanceFactor={9}
+        zIndexRange={[50, 0]}
+        style={{ pointerEvents: "none" }}
+      >
+        <div className="speech-bubble">
+          <span className="speech-bubble-tag">{data.tag}</span>
+          <strong className="speech-bubble-title">
+            {data.bubbleLabel || data.title}
+          </strong>
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────
+   MobileDropLabels — shows all bubbles simultaneously on mobile
+   ────────────────────────────────────────────────────────────── */
+function MobileDropLabels() {
+  const [isMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 768px)").matches,
+  )
+  const [ready, setReady] = useState(false)
+  const checkedRef = useRef(false)
+
+  useFrame(() => {
+    if (!isMobile || checkedRef.current) return
+    if (waterDropRefs.current.length > 0) {
+      checkedRef.current = true
+      setReady(true)
+    }
+  })
+
+  if (!isMobile || !ready) return null
+
+  return (
+    <>
+      {waterDropRefs.current.map((node, i) => (
+        <DropLabel key={i} node={node} />
+      ))}
+    </>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────
    WaterDropHoverOverlay — speech bubble above hovered GLB drops
    ────────────────────────────────────────────────────────────── */
 function WaterDropHoverOverlay() {
@@ -566,6 +639,7 @@ function GLBBeanstalk() {
     <>
       <primitive object={processedScene} />
       <WaterDropHoverOverlay />
+      <MobileDropLabels />
     </>
   )
 }

@@ -1,83 +1,146 @@
-import React, { useRef, useState, useEffect, useLayoutEffect } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { Preload } from '@react-three/drei'
-import { useNavigate } from 'react-router-dom'
-import Scene from './components/Scene'
-import Navbar from './components/Navbar'
-import { dropClickBus } from './components/Beanstalk'
-import { allDroplets } from './data/portfolio'
-import gsap from 'gsap'
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
+import { Canvas } from "@react-three/fiber";
+import { Preload, useProgress } from "@react-three/drei";
+import { useNavigate } from "react-router-dom";
+import Scene from "./components/Scene";
+import Navbar from "./components/Navbar";
+import { dropClickBus } from "./components/Beanstalk";
+import { allDroplets } from "./data/portfolio";
+import gsap from "gsap";
 
 /* ─── Total scroll pages ─────────────────────────────────────── */
-const SCROLL_PAGES = 7   // 700vh / 100vh
+const SCROLL_PAGES = 7; // 700vh / 100vh
+
+function DropNavList({ dropScrollTs, scrollProgress, onItemClick }) {
+  const t = 1 - scrollProgress;
+  let activeIdx = -1;
+  if (dropScrollTs.length > 0) {
+    let bestDist = Infinity;
+    dropScrollTs.forEach((st, i) => {
+      const dist = Math.abs(t - st);
+      if (dist < bestDist) {
+        bestDist = dist;
+        activeIdx = i;
+      }
+    });
+  }
+
+  return (
+    <ul className="drop-nav-list">
+      {allDroplets.map((drop, i) => (
+        <li
+          key={drop.id}
+          className={`drop-nav-item${activeIdx === i ? " active" : ""}`}
+          onClick={() => onItemClick(i)}
+        >
+          <span className="drop-nav-label">
+            {drop.bubbleLabel || drop.title}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function App() {
-  const scrollRef = useRef(null)
-  const [scrollProgress, setScrollProgress] = useState(1)
-  const [activeSection, setActiveSection] = useState(null)
-  const [scrolled, setScrolled] = useState(false)
-  const [whiteFade, setWhiteFade] = useState(false)
-  const navigate = useNavigate()
+  const scrollRef = useRef(null);
+  const [scrollProgress, setScrollProgress] = useState(1);
+  const [activeSection, setActiveSection] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [dropScrollTs, setDropScrollTs] = useState([]);
+  const [whiteFade, setWhiteFade] = useState(false);
+  const navigate = useNavigate();
 
   /* Track raw scroll progress 0→1 */
   useEffect(() => {
     const onScroll = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight
-      const p = max > 0 ? window.scrollY / max : 0
-      setScrollProgress(p)
-      setScrolled(p > 0.02)
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? window.scrollY / max : 0;
+      setScrollProgress(p);
+      setScrolled(p > 0.02);
 
       /* Determine which droplet section is closest */
       const idx = allDroplets.findIndex((d, i) => {
-        const next = allDroplets[i + 1]
-        const start = d.stalkT - 0.08
-        const end = next ? next.stalkT - 0.08 : 1
-        return p >= start && p < end
-      })
-      setActiveSection(idx >= 0 ? allDroplets[idx] : null)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+        const next = allDroplets[i + 1];
+        const start = d.stalkT - 0.08;
+        const end = next ? next.stalkT - 0.08 : 1;
+        return p >= start && p < end;
+      });
+      setActiveSection(idx >= 0 ? allDroplets[idx] : null);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Listen for the scroll cap signal from the 3D scene */
+  useEffect(() => {
+    const handler = (e) => {
+      // scrollProgress = 1 - t, so minFraction = 1 - maxT
+      minScrollFractionRef.current = 1 - e.detail.maxT;
+      if (e.detail.dropTs) setDropScrollTs(e.detail.dropTs);
+    };
+    window.addEventListener("scrollcapset", handler);
+    return () => window.removeEventListener("scrollcapset", handler);
+  }, []);
 
   /* Start at the bottom of the scroll space (base of beanstalk) — instant, no animation */
   useLayoutEffect(() => {
-    window.scrollTo({ top: document.documentElement.scrollHeight - window.innerHeight, behavior: 'instant' })
+    window.scrollTo({
+      top: document.documentElement.scrollHeight - window.innerHeight,
+      behavior: "instant",
+    });
     // Clear any leftover zoom state from a previous droplet click
-    dropClickBus.active = false
-    dropClickBus.targetPos = null
-  }, [])
+    dropClickBus.active = false;
+    dropClickBus.targetPos = null;
+  }, []);
 
   /* Intro animation */
   useEffect(() => {
     gsap.fromTo(
-      '.scroll-hint',
+      ".scroll-hint",
       { opacity: 0 },
-      { opacity: 1, duration: 1.8, ease: 'power2.out', delay: 1.4 }
-    )
-  }, [])
+      { opacity: 1, duration: 1.8, ease: "power2.out", delay: 1.4 },
+    );
+  }, []);
 
   /* White fade on drop click → navigate to route after fade */
   useEffect(() => {
     const handleDropClick = (e) => {
-      const route = e.detail?.data?.route
-      setWhiteFade(true)
+      const route = e.detail?.data?.route;
+      setWhiteFade(true);
       if (route) {
         // Wait for the 1s fade transition to complete, then navigate
         setTimeout(() => {
-          navigate(route)
-        }, 1050)
+          navigate(route);
+        }, 1050);
       }
-    }
-    window.addEventListener('dropletclick', handleDropClick)
-    return () => window.removeEventListener('dropletclick', handleDropClick)
-  }, [navigate])
+    };
+    window.addEventListener("dropletclick", handleDropClick);
+    return () => window.removeEventListener("dropletclick", handleDropClick);
+  }, [navigate]);
+
+  const scrollToDropIdx = useCallback(
+    (idx) => {
+      const st = dropScrollTs[idx];
+      if (st == null) return;
+      const sp = 1 - st;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: Math.round(sp * max), behavior: "smooth" });
+    },
+    [dropScrollTs],
+  );
 
   const dismissFade = () => {
-    setWhiteFade(false)
-    dropClickBus.active = false
-    dropClickBus.targetPos = null
-  }
+    setWhiteFade(false);
+    dropClickBus.active = false;
+    dropClickBus.targetPos = null;
+  };
 
   return (
     <>
@@ -91,7 +154,7 @@ export default function App() {
           gl={{
             antialias: true,
             alpha: false,
-            powerPreference: 'high-performance',
+            powerPreference: "high-performance",
           }}
           dpr={[1, 1.5]}
         >
@@ -102,7 +165,7 @@ export default function App() {
 
       {/* ── White fade overlay ────────────────────────────── */}
       <div
-        className={`white-fade${whiteFade ? ' visible' : ''}`}
+        className={`white-fade${whiteFade ? " visible" : ""}`}
         onClick={dismissFade}
       />
 
@@ -111,22 +174,21 @@ export default function App() {
         {/* Navbar */}
         <Navbar />
 
-        {/* Section label */}
-        <div className={`section-label ${activeSection && scrolled ? 'visible' : ''}`}>
-          {activeSection && (
-            <>
-              <h2>{activeSection.title}</h2>
-              <p>{activeSection.tag} · {activeSection.year}</p>
-            </>
-          )}
-        </div>
+        {/* Drop navigation list */}
+        {dropScrollTs.length > 0 && (
+          <DropNavList
+            dropScrollTs={dropScrollTs}
+            scrollProgress={scrollProgress}
+            onItemClick={scrollToDropIdx}
+          />
+        )}
 
         {/* Scroll hint */}
-        <div className={`scroll-hint ${scrolled ? 'hidden' : ''}`}>
+        <div className={`scroll-hint ${scrolled ? "hidden" : ""}`}>
           <span>Scroll</span>
           <div className="scroll-arrow" />
         </div>
       </div>
     </>
-  )
+  );
 }
