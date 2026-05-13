@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import PageWrapper from './PageWrapper'
+import React, { useState } from "react";
+import PageWrapper from "./PageWrapper";
 
 /* ─────────────────────────────────────────────────────────────────
    Media data
@@ -11,66 +11,81 @@ import PageWrapper from './PageWrapper'
 const MEDIA = [
   /* ── Row 1 ─────────────────────────────────────────────────── */
   {
-    id: 'memories',
-    area: 'topleft',
-    type: 'youtube',
-    thumb: '/memories_video_16x9.gif',
-    embedId: 'b1HWwydB1sM?si=gjEzsHg7T5pmzhYH',
-    label: 'Memories',
-    sublabel: 'Music Video',
+    id: "memories",
+    area: "topleft",
+    type: "youtube",
+    thumb: "/memories_video_16x9.gif",
+    embedId: "b1HWwydB1sM?si=gjEzsHg7T5pmzhYH",
+    label: "Memories",
+    sublabel: "Music Video",
   },
   {
-    id: 'photo-12',
-    area: 'topright',
-    type: 'photo',
-    src: '/photography-showcase-12.webp',
+    id: "photo-12",
+    area: "topright",
+    type: "photo",
+    src: "/photography-showcase-12.webp",
   },
 
   /* ── Row 2 ─────────────────────────────────────────────────── */
   {
-    id: 'photo-1',
-    area: 'secleft',
-    type: 'photo',
-    src: '/photography-showcase-1.webp',
+    id: "photo-1",
+    area: "secleft",
+    type: "photo",
+    src: "/photography-showcase-1.webp",
   },
   {
-    id: 'godspeed',
-    area: 'secright',
-    type: 'youtube',
-    thumb: '/godspeed_video_16x9.gif',
-    embedId: 'fE81ziF6JqE?si=D9mlkMeJdYJc7C2j',
-    label: 'Godspeed SS22',
-    sublabel: 'Fashion Film',
+    id: "godspeed",
+    area: "secright",
+    type: "youtube",
+    thumb: "/godspeed_video_16x9.gif",
+    embedId: "fE81ziF6JqE?si=D9mlkMeJdYJc7C2j",
+    label: "Godspeed SS22",
+    sublabel: "Fashion Film",
   },
 
   /* ── Row 3 ─────────────────────────────────────────────────── */
-  { id: 'photo-11', area: 'thileft',  type: 'photo', src: '/photography-showcase-11.webp' },
-  { id: 'photo-2',  area: 'tmiddle',  type: 'photo', src: '/photography-showcase-2.webp'  },
-  { id: 'photo-4',  area: 'tright',   type: 'photo', src: '/photography-showcase-4.webp'  },
+  {
+    id: "photo-11",
+    area: "thileft",
+    type: "photo",
+    src: "/photography-showcase-11.webp",
+  },
+  {
+    id: "photo-2",
+    area: "tmiddle",
+    type: "photo",
+    src: "/photography-showcase-2.webp",
+  },
+  {
+    id: "photo-4",
+    area: "tright",
+    type: "photo",
+    src: "/photography-showcase-4.webp",
+  },
 
   /* ── Row 4 ─────────────────────────────────────────────────── */
   {
-    id: 'photo-10',
-    area: 'fouleft',
-    type: 'photo',
-    src: '/photography-showcase-10.webp',
+    id: "photo-10",
+    area: "fouleft",
+    type: "photo",
+    src: "/photography-showcase-10.webp",
   },
   {
-    id: 'festival',
-    area: 'foumiddle',
-    type: 'video_native',
-    thumb: '/festival_video_16x9.gif',
-    videoSrc: '/tokyo_summer_festivals.mp4',
-    label: 'Tokyo Summer Festivals',
-    sublabel: 'Short Film',
+    id: "festival",
+    area: "foumiddle",
+    type: "video_native",
+    thumb: "/festival_video_16x9.gif",
+    videoSrc: "/tokyo_summer_festivals.mp4",
+    label: "Tokyo Summer Festivals",
+    sublabel: "Short Film",
   },
   {
-    id: 'photo-3',
-    area: 'fouright',
-    type: 'photo',
-    src: '/photography-showcase-3.webp',
+    id: "photo-3",
+    area: "fouright",
+    type: "photo",
+    src: "/photography-showcase-3.webp",
   },
-]
+];
 
 /* ─────────────────────────────────────────────────────────────────
    Photo cell
@@ -78,9 +93,9 @@ const MEDIA = [
 function MediaPhoto({ src }) {
   return (
     <div className="mc-photo">
-      <img src={src} alt="" />
+      <img src={src} alt="" loading="lazy" decoding="async" />
     </div>
-  )
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -88,19 +103,27 @@ function MediaPhoto({ src }) {
    swaps to the actual video/iframe on click
    ───────────────────────────────────────────────────────────────── */
 function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
-  const [playing, setPlaying] = useState(false)
-  const isYouTube = Boolean(embedId)
+  const [playing, setPlaying] = useState(false);
+  const isYouTube = Boolean(embedId);
 
   return (
     <div
-      className={`mc-video${playing ? ' playing' : ''}`}
-      onClick={() => { if (!playing) setPlaying(true) }}
+      className={`mc-video${playing ? " playing" : ""}`}
+      onClick={() => {
+        if (!playing) setPlaying(true);
+      }}
     >
       {!playing && (
-        <div
-          className="mc-thumb"
-          style={{ backgroundImage: thumb ? `url(${thumb})` : 'none' }}
-        >
+        <div className="mc-thumb">
+          {thumb && (
+            <img
+              src={thumb}
+              alt=""
+              className="mc-thumb-img"
+              loading="lazy"
+              decoding="async"
+            />
+          )}
           <div className="mc-play-overlay">
             <div className="mc-play-icon">
               {/* Play triangle */}
@@ -108,7 +131,7 @@ function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
                 <path d="M1 1L13 8L1 15V1Z" fill="currentColor" />
               </svg>
             </div>
-            {label    && <span className="mc-label">{label}</span>}
+            {label && <span className="mc-label">{label}</span>}
             {sublabel && <span className="mc-sublabel">{sublabel}</span>}
           </div>
         </div>
@@ -136,7 +159,7 @@ function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
         />
       )}
     </div>
-  )
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -146,11 +169,12 @@ export default function VideoPhotographyPage() {
   return (
     <PageWrapper>
       <section className="vp-page">
-
         <header className="vp-header">
           <span className="vp-tag">Work</span>
           <h1 className="vp-title">
-            Video &amp;<br />Photography
+            Video &amp;
+            <br />
+            Photography
           </h1>
           <p className="vp-subtitle">
             A selection of film and photography work — music videos,&nbsp;
@@ -161,7 +185,7 @@ export default function VideoPhotographyPage() {
         <div className="vp-grid">
           {MEDIA.map((item) => (
             <div key={item.id} className={`vp-cell vp-${item.area}`}>
-              {item.type === 'photo' ? (
+              {item.type === "photo" ? (
                 <MediaPhoto src={item.src} />
               ) : (
                 <MediaVideo
@@ -175,8 +199,7 @@ export default function VideoPhotographyPage() {
             </div>
           ))}
         </div>
-
       </section>
     </PageWrapper>
-  )
+  );
 }

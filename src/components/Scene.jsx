@@ -1,25 +1,34 @@
-import React, { useRef, useEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
-import { Environment } from '@react-three/drei'
-import * as THREE from 'three'
-import Beanstalk, { getStalkPosition, waterDropRefs, dropClickBus } from './Beanstalk'
-import Bubble from './Bubble'
-import FloatingParticles from './FloatingParticles'
-import Effects from './Effects'
-import { allDroplets } from '../data/portfolio'
+import React, { useRef, useEffect } from "react"
+import { useFrame, useThree } from "@react-three/fiber"
+import { Environment } from "@react-three/drei"
+import * as THREE from "three"
+import Beanstalk, {
+  getStalkPosition,
+  waterDropRefs,
+  dropClickBus,
+} from "./Beanstalk"
+import Bubble from "./Bubble"
+import FloatingParticles from "./FloatingParticles"
+import Effects from "./Effects"
+import { allDroplets } from "../data/portfolio"
+
+/* Shared signal — set once all drop positions are resolved.
+   maxT: the scroll-space position (0–1) of the topmost water drop.
+   App.jsx reads this via the 'scrollcapset' CustomEvent. */
+export const scrollCapSignal = { maxT: 1, ready: false }
 
 /* ──────────────────────────────────────────────────────────────
    ScrollCamera — lives inside Canvas so it can use Three.js hooks
    ────────────────────────────────────────────────────────────── */
 function ScrollCamera({ scrollProgress }) {
   const { camera } = useThree()
-  const smooth     = useRef(1)
+  const smooth = useRef(1)
   const lookTarget = useRef(new THREE.Vector3())
   // Independently smoothed camera position — prevents jumps when drop focus changes
-  const camPos     = useRef(new THREE.Vector3(12, 2, 12))
+  const camPos = useRef(new THREE.Vector3(12, 2, 12))
   // Per-drop data resolved lazily after the GLB mounts.
   // Each entry: { pos: Vector3, frontPos: Vector3, scrollT: number }
-  const dropsData  = useRef([])
+  const dropsData = useRef([])
 
   useEffect(() => {
     camera.position.set(12, 66, 12)
@@ -34,7 +43,9 @@ function ScrollCamera({ scrollProgress }) {
       const dir = new THREE.Vector3().subVectors(camPos.current, target)
       const dist = dir.length()
       if (dist > 0.01) dir.normalize()
-      const zoomDest = target.clone().addScaledVector(dir, Math.max(1.5, dist * 0.1))
+      const zoomDest = target
+        .clone()
+        .addScaledVector(dir, Math.max(1.5, dist * 0.1))
       camPos.current.lerp(zoomDest, 0.055)
       camera.position.copy(camPos.current)
       lookTarget.current.lerp(target, 0.08)
@@ -44,14 +55,7 @@ function ScrollCamera({ scrollProgress }) {
 
     // Smooth scroll — gentle lag so fast swipes don't whip the camera
     smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03)
-    const t = 1 - smooth.current
-
-    /* Spiral path around the beanstalk
-       t=0 → base looking up
-       t=1 → top, in the clouds */
-    const angle      = t * Math.PI * 2.8   // ~1.4 full orbits
-    const baseRadius = 14 - t * 6          // 14 → 8 (closer to stalk)
-    const height     = t * 64              // 0 → 64
+    let t = 1 - smooth.current
 
     // Lazily resolve every waterdrop's world position once it's in the scene
     waterDropRefs.current.forEach((node, i) => {
@@ -69,32 +73,62 @@ function ScrollCamera({ scrollProgress }) {
         if (wp.lengthSq() > 0.01) {
           dd.pos.copy(wp)
           // Direction from stalk origin → drop in XZ (outward from the beanstalk)
-          const dx = wp.x, dz = wp.z
+          const dx = wp.x,
+            dz = wp.z
           const dLen = Math.sqrt(dx * dx + dz * dz) || 1
           // Place the front-on camera 7 units out from the drop along that direction
-          dd.frontPos.set(
-            wp.x + (dx / dLen) * 7,
-            wp.y,
-            wp.z + (dz / dLen) * 7
-          )
+          dd.frontPos.set(wp.x + (dx / dLen) * 7, wp.y, wp.z + (dz / dLen) * 7)
           // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
           dd.scrollT = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
         }
       }
     })
 
+    // Once all drop positions are known, cap t so the camera never travels
+    // above the topmost water drop.
+    const numExpected = waterDropRefs.current.length
+    const numResolved = dropsData.current.filter(
+      (dd) => dd && dd.scrollT >= 0,
+    ).length
+    if (numExpected > 0 && numResolved === numExpected) {
+      if (!scrollCapSignal.ready) {
+        scrollCapSignal.maxT = dropsData.current.reduce(
+          (m, dd) => Math.max(m, dd.scrollT),
+          0,
+        )
+        scrollCapSignal.ready = true
+        window.dispatchEvent(
+          new CustomEvent("scrollcapset", {
+            detail: { maxT: scrollCapSignal.maxT },
+          }),
+        )
+      }
+      t = Math.min(t, scrollCapSignal.maxT)
+    }
+
+    /* Spiral path around the beanstalk
+       t=0 → base looking up
+       t=maxT → topmost water drop */
+    const angle = t * Math.PI * 2.8 // ~1.4 full orbits
+    const baseRadius = 14 - t * 6 // 14 → 8 (closer to stalk)
+    const height = t * 64 // 0 → 64
+
     // Weighted blend across ALL drops so there is never a hard winner-switch.
     // Each drop contributes based on a narrow (±10%) smoothstep proximity bell.
     // Dividing by totalWeight normalises the blend so the camera always moves
     // toward a single weighted-average target, not a sharp jump.
-    const blendLook  = new THREE.Vector3()
+    const blendLook = new THREE.Vector3()
     const blendFront = new THREE.Vector3()
-    let totalWeight  = 0
+    let totalWeight = 0
 
     dropsData.current.forEach((dd) => {
       if (dd.scrollT < 0) return
-      const raw = THREE.MathUtils.clamp(1 - Math.abs(t - dd.scrollT) / 0.10, 0, 1)
-      const w   = raw * raw * (3 - 2 * raw) // smoothstep
+      const raw = THREE.MathUtils.clamp(
+        1 - Math.abs(t - dd.scrollT) / 0.1,
+        0,
+        1,
+      )
+      const w = raw * raw * (3 - 2 * raw) // smoothstep
       blendLook.addScaledVector(dd.pos, w)
       blendFront.addScaledVector(dd.frontPos, w)
       totalWeight += w
@@ -114,9 +148,9 @@ function ScrollCamera({ scrollProgress }) {
     const orbitZ = Math.cos(angle) * radius
 
     // Desired camera position — blend between orbit and front-facing position
-    const desiredX = THREE.MathUtils.lerp(orbitX,      blendFront.x, prox)
-    const desiredY = THREE.MathUtils.lerp(height + 2,  blendFront.y, prox)
-    const desiredZ = THREE.MathUtils.lerp(orbitZ,      blendFront.z, prox)
+    const desiredX = THREE.MathUtils.lerp(orbitX, blendFront.x, prox)
+    const desiredY = THREE.MathUtils.lerp(height + 2, blendFront.y, prox)
+    const desiredZ = THREE.MathUtils.lerp(orbitZ, blendFront.z, prox)
 
     // Smooth camera position independently — this is what eliminates jumps/rolls
     camPos.current.x = THREE.MathUtils.lerp(camPos.current.x, desiredX, 0.04)
@@ -125,9 +159,13 @@ function ScrollCamera({ scrollProgress }) {
     camera.position.copy(camPos.current)
 
     // Smoothly blend look target toward the active drop (or stalk ahead)
-    const tAhead    = Math.min(1, t + 0.04)
+    const tAhead = Math.min(1, t + 0.04)
     const stalkAhead = getStalkPosition(tAhead)
-    const defaultLook = new THREE.Vector3(stalkAhead.x, height + 9, stalkAhead.z)
+    const defaultLook = new THREE.Vector3(
+      stalkAhead.x,
+      height + 9,
+      stalkAhead.z,
+    )
     if (totalWeight > 0) defaultLook.lerp(blendLook, prox)
 
     lookTarget.current.lerp(defaultLook, 0.035)
@@ -179,8 +217,8 @@ export default function Scene({ scrollProgress }) {
   return (
     <>
       {/* ── Background & Fog ──────────────────────────────────── */}
-      <color attach="background" args={['#a3c8de']} />
-      <fog attach="fog" args={['#b8d8ea', 50, 160]} />
+      <color attach="background" args={["#a3c8de"]} />
+      <fog attach="fog" args={["#b8d8ea", 50, 160]} />
 
       {/* ── Lighting ─────────────────────────────────────────── */}
       <ambientLight intensity={0.35} color="#d8eeff" />
@@ -208,10 +246,34 @@ export default function Scene({ scrollProgress }) {
       />
 
       {/* Glowing point lights along the stalk */}
-      <pointLight position={[1, 10, 1]} intensity={0.7} color="#b0ffcc" distance={22} decay={2} />
-      <pointLight position={[-1, 25, 1]} intensity={0.6} color="#c8f0ff" distance={22} decay={2} />
-      <pointLight position={[1, 42, -1]} intensity={0.6} color="#e0d8ff" distance={22} decay={2} />
-      <pointLight position={[0, 60, 0]} intensity={0.8} color="#fff8c0" distance={30} decay={2} />
+      <pointLight
+        position={[1, 10, 1]}
+        intensity={0.7}
+        color="#b0ffcc"
+        distance={22}
+        decay={2}
+      />
+      <pointLight
+        position={[-1, 25, 1]}
+        intensity={0.6}
+        color="#c8f0ff"
+        distance={22}
+        decay={2}
+      />
+      <pointLight
+        position={[1, 42, -1]}
+        intensity={0.6}
+        color="#e0d8ff"
+        distance={22}
+        decay={2}
+      />
+      <pointLight
+        position={[0, 60, 0]}
+        intensity={0.8}
+        color="#fff8c0"
+        distance={30}
+        decay={2}
+      />
 
       {/* ── Camera driver ─────────────────────────────────────── */}
       <ScrollCamera scrollProgress={scrollProgress} />
