@@ -1,11 +1,11 @@
-import React from 'react'
+import React from "react"
 import {
   EffectComposer,
   Bloom,
   Pixelation,
   Vignette,
-} from '@react-three/postprocessing'
-import { BlendFunction } from 'postprocessing'
+} from "@react-three/postprocessing"
+import { BlendFunction } from "postprocessing"
 
 /* ──────────────────────────────────────────────────────────────
    Post-processing pipeline
@@ -17,7 +17,7 @@ import { BlendFunction } from 'postprocessing'
    ────────────────────────────────────────────────────────────── */
 export default function Effects() {
   return (
-    <EffectComposer>
+    <EffectComposer multisampling={0}>
       {/*
         Bloom — makes bright emissive surfaces glow.
         - mipmapBlur gives a softer, more natural bloom spread

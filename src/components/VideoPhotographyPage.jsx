@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import PageWrapper from "./PageWrapper";
+import React, { useState } from "react"
+import PageWrapper from "./PageWrapper"
 
 /* ─────────────────────────────────────────────────────────────────
    Media data
    Assets live in /public/ —
-     memories_video_16x9.gif, godspeed_video_16x9.gif,
-     festival_video_16x9.gif, tokyo_summer_festivals.mp4,
+     memories_video_16x9.mp4, godspeed_video_16x9.mp4,
+     festival_video_16x9.mp4, tokyo_summer_festivals.mp4,
      photography-showcase-{1,2,3,4,10,11,12}.webp
    ───────────────────────────────────────────────────────────────── */
 const MEDIA = [
@@ -14,7 +14,7 @@ const MEDIA = [
     id: "memories",
     area: "topleft",
     type: "youtube",
-    thumb: "/memories_video_16x9.gif",
+    thumb: "/memories_video_16x9.mp4",
     embedId: "b1HWwydB1sM?si=gjEzsHg7T5pmzhYH",
     label: "Memories",
     sublabel: "Music Video",
@@ -37,7 +37,7 @@ const MEDIA = [
     id: "godspeed",
     area: "secright",
     type: "youtube",
-    thumb: "/godspeed_video_16x9.gif",
+    thumb: "/godspeed_video_16x9.mp4",
     embedId: "fE81ziF6JqE?si=D9mlkMeJdYJc7C2j",
     label: "Godspeed SS22",
     sublabel: "Fashion Film",
@@ -74,7 +74,7 @@ const MEDIA = [
     id: "festival",
     area: "foumiddle",
     type: "video_native",
-    thumb: "/festival_video_16x9.gif",
+    thumb: "/festival_video_16x9.mp4",
     videoSrc: "/tokyo_summer_festivals.mp4",
     label: "Tokyo Summer Festivals",
     sublabel: "Short Film",
@@ -85,7 +85,7 @@ const MEDIA = [
     type: "photo",
     src: "/photography-showcase-3.webp",
   },
-];
+]
 
 /* ─────────────────────────────────────────────────────────────────
    Photo cell
@@ -95,34 +95,30 @@ function MediaPhoto({ src }) {
     <div className="mc-photo">
       <img src={src} alt="" loading="lazy" decoding="async" />
     </div>
-  );
+  )
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Video cell — shows a looping GIF thumbnail with a play overlay,
+   Video cell — shows a looping mp4 thumbnail with a play overlay,
    swaps to the actual video/iframe on click
    ───────────────────────────────────────────────────────────────── */
 function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
-  const [playing, setPlaying] = useState(false);
-  const isYouTube = Boolean(embedId);
+  const [playing, setPlaying] = useState(false)
+  const isYouTube = Boolean(embedId)
 
   return (
     <div
       className={`mc-video${playing ? " playing" : ""}`}
       onClick={() => {
-        if (!playing) setPlaying(true);
+        if (!playing) setPlaying(true)
       }}
     >
       {!playing && (
         <div className="mc-thumb">
           {thumb && (
-            <img
-              src={thumb}
-              alt=""
-              className="mc-thumb-img"
-              loading="lazy"
-              decoding="async"
-            />
+            <video autoPlay muted loop playsInline>
+              <source src={thumb} type="video/mp4" />
+            </video>
           )}
           <div className="mc-play-overlay">
             <div className="mc-play-icon">
@@ -159,7 +155,7 @@ function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
         />
       )}
     </div>
-  );
+  )
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -201,5 +197,5 @@ export default function VideoPhotographyPage() {
         </div>
       </section>
     </PageWrapper>
-  );
+  )
 }

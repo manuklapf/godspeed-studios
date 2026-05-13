@@ -94,7 +94,4 @@ export const allDroplets = [
   },
   { ...caseStudies[1], route: "/fashion-campaign" },
   { ...caseStudies[0], route: "/marketplace-case-study" },
-  { ...caseStudies[2], route: "/project/cloud-commerce" },
-  { ...caseStudies[3], route: "/project/immersive-data" },
-  { ...references[1], route: "/project/reference" },
 ]

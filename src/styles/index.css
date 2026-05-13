@@ -806,6 +806,15 @@ body {
   display: block;
 }
 
+.mc-thumb video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .mc-video:not(.playing):hover .mc-thumb {
   transform: scale(1.045);
 }

@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect, useLayoutEffect } from "react"
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react"
 import { Canvas } from "@react-three/fiber"
 import { Preload, useProgress } from "@react-three/drei"
 import { useNavigate } from "react-router-dom"
@@ -10,6 +16,37 @@ import gsap from "gsap"
 
 /* ─── Total scroll pages ─────────────────────────────────────── */
 const SCROLL_PAGES = 7 // 700vh / 100vh
+
+function DropNavList({ dropScrollTs, scrollProgress, onItemClick }) {
+  const t = 1 - scrollProgress
+  let activeIdx = -1
+  if (dropScrollTs.length > 0) {
+    let bestDist = Infinity
+    dropScrollTs.forEach((st, i) => {
+      const dist = Math.abs(t - st)
+      if (dist < bestDist) {
+        bestDist = dist
+        activeIdx = i
+      }
+    })
+  }
+
+  return (
+    <ul className="drop-nav-list">
+      {allDroplets.map((drop, i) => (
+        <li
+          key={drop.id}
+          className={`drop-nav-item${activeIdx === i ? " active" : ""}`}
+          onClick={() => onItemClick(i)}
+        >
+          <span className="drop-nav-label">
+            {drop.bubbleLabel || drop.title}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 function AppLoadingOverlay() {
   const { active } = useProgress()
@@ -38,6 +75,7 @@ export default function App() {
   const [scrollProgress, setScrollProgress] = useState(1)
   const [activeSection, setActiveSection] = useState(null)
   const [scrolled, setScrolled] = useState(false)
+  const [dropScrollTs, setDropScrollTs] = useState([])
   const [whiteFade, setWhiteFade] = useState(false)
   const navigate = useNavigate()
   // Minimum scroll fraction (0–1) enforced once drop positions are resolved.
@@ -79,6 +117,7 @@ export default function App() {
     const handler = (e) => {
       // scrollProgress = 1 - t, so minFraction = 1 - maxT
       minScrollFractionRef.current = 1 - e.detail.maxT
+      if (e.detail.dropTs) setDropScrollTs(e.detail.dropTs)
     }
     window.addEventListener("scrollcapset", handler)
     return () => window.removeEventListener("scrollcapset", handler)
@@ -120,6 +159,17 @@ export default function App() {
     return () => window.removeEventListener("dropletclick", handleDropClick)
   }, [navigate])
 
+  const scrollToDropIdx = useCallback(
+    (idx) => {
+      const st = dropScrollTs[idx]
+      if (st == null) return
+      const sp = 1 - st
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      window.scrollTo({ top: Math.round(sp * max), behavior: "smooth" })
+    },
+    [dropScrollTs],
+  )
+
   const dismissFade = () => {
     setWhiteFade(false)
     dropClickBus.active = false
@@ -135,6 +185,7 @@ export default function App() {
       <div className="canvas-container">
         <Canvas
           camera={{ position: [12, 66, 12], fov: 55, near: 0.1, far: 600 }}
+          performance={{ min: 0.5 }}
           gl={{
             antialias: true,
             alpha: false,
@@ -161,19 +212,14 @@ export default function App() {
         {/* Navbar */}
         <Navbar />
 
-        {/* Section label */}
-        <div
-          className={`section-label ${activeSection && scrolled ? "visible" : ""}`}
-        >
-          {activeSection && (
-            <>
-              <h2>{activeSection.title}</h2>
-              <p>
-                {activeSection.tag} · {activeSection.year}
-              </p>
-            </>
-          )}
-        </div>
+        {/* Drop navigation list */}
+        {dropScrollTs.length > 0 && (
+          <DropNavList
+            dropScrollTs={dropScrollTs}
+            scrollProgress={scrollProgress}
+            onItemClick={scrollToDropIdx}
+          />
+        )}
 
         {/* Scroll hint */}
         <div className={`scroll-hint ${scrolled ? "hidden" : ""}`}>

@@ -29,6 +29,10 @@ function ScrollCamera({ scrollProgress }) {
   // Per-drop data resolved lazily after the GLB mounts.
   // Each entry: { pos: Vector3, frontPos: Vector3, scrollT: number }
   const dropsData = useRef([])
+  // Preallocated vectors — reused every frame to avoid GC pressure
+  const blendLookRef = useRef(new THREE.Vector3())
+  const blendFrontRef = useRef(new THREE.Vector3())
+  const defaultLookRef = useRef(new THREE.Vector3())
 
   useEffect(() => {
     camera.position.set(12, 66, 12)
@@ -120,8 +124,8 @@ function ScrollCamera({ scrollProgress }) {
     // Each drop contributes based on a narrow (±10%) smoothstep proximity bell.
     // Dividing by totalWeight normalises the blend so the camera always moves
     // toward a single weighted-average target, not a sharp jump.
-    const blendLook = new THREE.Vector3()
-    const blendFront = new THREE.Vector3()
+    const blendLook = blendLookRef.current.set(0, 0, 0)
+    const blendFront = blendFrontRef.current.set(0, 0, 0)
     let totalWeight = 0
 
     dropsData.current.forEach((dd) => {
@@ -164,7 +168,7 @@ function ScrollCamera({ scrollProgress }) {
     // Smoothly blend look target toward the active drop (or stalk ahead)
     const tAhead = Math.min(1, t + 0.04)
     const stalkAhead = getStalkPosition(tAhead)
-    const defaultLook = new THREE.Vector3(
+    const defaultLook = defaultLookRef.current.set(
       stalkAhead.x,
       height + 9,
       stalkAhead.z,
@@ -248,33 +252,19 @@ export default function Scene({ scrollProgress }) {
         intensity={0.32}
       />
 
-      {/* Glowing point lights along the stalk */}
-      <pointLight
-        position={[1, 10, 1]}
-        intensity={0.7}
-        color="#b0ffcc"
-        distance={22}
-        decay={2}
-      />
+      {/* Glowing point lights along the stalk — 2 lights cover the full height */}
       <pointLight
         position={[-1, 25, 1]}
-        intensity={0.6}
+        intensity={0.9}
         color="#c8f0ff"
-        distance={22}
-        decay={2}
-      />
-      <pointLight
-        position={[1, 42, -1]}
-        intensity={0.6}
-        color="#e0d8ff"
-        distance={22}
+        distance={40}
         decay={2}
       />
       <pointLight
         position={[0, 60, 0]}
-        intensity={0.8}
+        intensity={1.0}
         color="#fff8c0"
-        distance={30}
+        distance={40}
         decay={2}
       />
 
@@ -297,7 +287,7 @@ export default function Scene({ scrollProgress }) {
       <Beanstalk />
 
       {/* ── Floating fairy particles ─────────────────────────── */}
-      <FloatingParticles count={2200} />
+      <FloatingParticles count={1200} />
 
       {/* ── Cloud layers ─────────────────────────────────────── */}
       <CloudPuff position={[-14, 44, -8]} scale={1.1} />
