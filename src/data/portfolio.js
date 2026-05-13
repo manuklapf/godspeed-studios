@@ -35,7 +35,27 @@ export const caseStudies = [
     link: null,
     year: "2024",
   },
-];
+  {
+    id: "cs-2",
+    type: "case-study",
+    tag: "Case Study",
+    title: "Cloud Commerce Platform",
+    description:
+      "End-to-end UX redesign of an e-commerce checkout flow, increasing conversion by 34% through simplified interactions and motion feedback.",
+    link: "https://your-project-link.com",
+    year: "2023",
+  },
+  {
+    id: "cs-3",
+    type: "case-study",
+    tag: "Case Study",
+    title: "Immersive Data Story",
+    description:
+      "Interactive data-journalism piece combining scrollytelling, custom WebGL visualisations, and narrative design for a newsroom.",
+    link: "https://your-project-link.com",
+    year: "2023",
+  },
+]
 
 export const references = [
   {
@@ -49,7 +69,18 @@ export const references = [
     link: "https://linkedin.com",
     year: "",
   },
-];
+  {
+    id: "ref-2",
+    type: "reference",
+    tag: "Reference",
+    title: "John Smith",
+    subtitle: "CTO · GreenLeaf Startup",
+    description:
+      '"Brought our product to life with elegance and precision. Their ability to translate complex problems into intuitive experiences is rare."',
+    link: "https://linkedin.com",
+    year: "",
+  },
+]
 
 /* ─────────────────────────────────────────────────────────────────
    All droplets in scene order (bottom → top of beanstalk).
@@ -63,4 +94,7 @@ export const allDroplets = [
   },
   { ...caseStudies[1], route: "/fashion-campaign" },
   { ...caseStudies[0], route: "/marketplace-case-study" },
-];
+  { ...caseStudies[2], route: "/project/cloud-commerce" },
+  { ...caseStudies[3], route: "/project/immersive-data" },
+  { ...references[1], route: "/project/reference" },
+]

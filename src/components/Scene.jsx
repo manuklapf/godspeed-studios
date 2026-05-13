@@ -1,58 +1,61 @@
-import React, { useRef, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
-import * as THREE from "three";
+import React, { useRef, useEffect } from "react"
+import { useFrame, useThree } from "@react-three/fiber"
+import { Environment } from "@react-three/drei"
+import * as THREE from "three"
 import Beanstalk, {
   getStalkPosition,
   waterDropRefs,
   dropClickBus,
-} from "./Beanstalk";
-import Bubble from "./Bubble";
-import FloatingParticles from "./FloatingParticles";
-import Effects from "./Effects";
-import { allDroplets } from "../data/portfolio";
+} from "./Beanstalk"
+import Bubble from "./Bubble"
+import FloatingParticles from "./FloatingParticles"
+import Effects from "./Effects"
+import { allDroplets } from "../data/portfolio"
+
+/* Shared signal — set once all drop positions are resolved.
+   maxT: the scroll-space position (0–1) of the topmost water drop.
+   App.jsx reads this via the 'scrollcapset' CustomEvent. */
+export const scrollCapSignal = { maxT: 1, ready: false }
 
 /* ──────────────────────────────────────────────────────────────
    ScrollCamera — lives inside Canvas so it can use Three.js hooks
    ────────────────────────────────────────────────────────────── */
 function ScrollCamera({ scrollProgress }) {
-  const { camera } = useThree();
-  const smooth = useRef(1);
-  const lookTarget = useRef(new THREE.Vector3());
+  const { camera } = useThree()
+  const smooth = useRef(1)
+  const lookTarget = useRef(new THREE.Vector3())
   // Independently smoothed camera position — prevents jumps when drop focus changes
-  const camPos = useRef(new THREE.Vector3(12, 2, 12));
+  const camPos = useRef(new THREE.Vector3(12, 2, 12))
   // Per-drop data resolved lazily after the GLB mounts.
   // Each entry: { pos: Vector3, frontPos: Vector3, scrollT: number }
-  const dropsData = useRef([]);
-  // Tracks the capped scroll maximum once all drop positions are resolved
-  const scrollCapSignal = useRef({ ready: false, maxT: 1 });
+  const dropsData = useRef([])
 
   useEffect(() => {
-    camera.position.set(12, 66, 12);
-    camera.lookAt(0, 62, 0);
-  }, [camera]);
+    camera.position.set(12, 66, 12)
+    camera.lookAt(0, 62, 0)
+  }, [camera])
 
   useFrame(() => {
     // ── Zoom-in override when a drop is clicked ──────────────
     if (dropClickBus.active && dropClickBus.targetPos) {
-      const target = dropClickBus.targetPos;
+      const target = dropClickBus.targetPos
       // Approach from current direction, stopping ~1.5 units from centre
-      const dir = new THREE.Vector3().subVectors(camPos.current, target);
-      const dist = dir.length();
-      if (dist > 0.01) dir.normalize();
+      const dir = new THREE.Vector3().subVectors(camPos.current, target)
+      const dist = dir.length()
+      if (dist > 0.01) dir.normalize()
       const zoomDest = target
         .clone()
-        .addScaledVector(dir, Math.max(1.5, dist * 0.1));
-      camPos.current.lerp(zoomDest, 0.055);
-      camera.position.copy(camPos.current);
-      lookTarget.current.lerp(target, 0.08);
-      camera.lookAt(lookTarget.current);
-      return;
+        .addScaledVector(dir, Math.max(1.5, dist * 0.1))
+      camPos.current.lerp(zoomDest, 0.055)
+      camera.position.copy(camPos.current)
+      lookTarget.current.lerp(target, 0.08)
+      camera.lookAt(lookTarget.current)
+      return
     }
 
     // Smooth scroll — gentle lag so fast swipes don't whip the camera
-    smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03);
-    let t = 1 - smooth.current;
+    smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03)
+    let t = 1 - smooth.current
 
     // Lazily resolve every waterdrop's world position once it's in the scene
     waterDropRefs.current.forEach((node, i) => {
@@ -61,39 +64,39 @@ function ScrollCamera({ scrollProgress }) {
           pos: new THREE.Vector3(),
           frontPos: new THREE.Vector3(),
           scrollT: -1,
-        };
-      }
-      const dd = dropsData.current[i];
-      if (dd.scrollT < 0) {
-        const wp = new THREE.Vector3();
-        node.getWorldPosition(wp);
-        if (wp.lengthSq() > 0.01) {
-          dd.pos.copy(wp);
-          // Direction from stalk origin → drop in XZ (outward from the beanstalk)
-          const dx = wp.x,
-            dz = wp.z;
-          const dLen = Math.sqrt(dx * dx + dz * dz) || 1;
-          // Place the front-on camera 7 units out from the drop along that direction
-          dd.frontPos.set(wp.x + (dx / dLen) * 7, wp.y, wp.z + (dz / dLen) * 7);
-          // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
-          dd.scrollT = THREE.MathUtils.clamp(wp.y / 64, 0, 1);
         }
       }
-    });
+      const dd = dropsData.current[i]
+      if (dd.scrollT < 0) {
+        const wp = new THREE.Vector3()
+        node.getWorldPosition(wp)
+        if (wp.lengthSq() > 0.01) {
+          dd.pos.copy(wp)
+          // Direction from stalk origin → drop in XZ (outward from the beanstalk)
+          const dx = wp.x,
+            dz = wp.z
+          const dLen = Math.sqrt(dx * dx + dz * dz) || 1
+          // Place the front-on camera 7 units out from the drop along that direction
+          dd.frontPos.set(wp.x + (dx / dLen) * 7, wp.y, wp.z + (dz / dLen) * 7)
+          // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
+          dd.scrollT = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
+        }
+      }
+    })
 
     // Once all drop positions are known, cap t so the camera never travels
     // above the topmost water drop.
-    const numExpected = waterDropRefs.current.length;
+    const numExpected = waterDropRefs.current.length
     const numResolved = dropsData.current.filter(
       (dd) => dd && dd.scrollT >= 0,
-    ).length;
+    ).length
     if (numExpected > 0 && numResolved === numExpected) {
       if (!scrollCapSignal.current.ready) {
         scrollCapSignal.current.maxT = dropsData.current.reduce(
           (m, dd) => Math.max(m, dd.scrollT),
           0,
-        );
-        scrollCapSignal.current.ready = true;
+        )
+        scrollCapSignal.current.ready = true
         window.dispatchEvent(
           new CustomEvent("scrollcapset", {
             detail: {
@@ -101,78 +104,107 @@ function ScrollCamera({ scrollProgress }) {
               dropTs: dropsData.current.map((dd) => dd.scrollT),
             },
           }),
-        );
+        )
       }
-      t = Math.min(t, scrollCapSignal.current.maxT);
+      t = Math.min(t, scrollCapSignal.current.maxT)
     }
 
     /* Spiral path around the beanstalk
        t=0 → base looking up
        t=maxT → topmost water drop */
-    const angle = t * Math.PI * 2.8; // ~1.4 full orbits
-    const baseRadius = 14 - t * 6; // 14 → 8 (closer to stalk)
-    const height = t * 64; // 0 → 64
+    const angle = t * Math.PI * 2.8 // ~1.4 full orbits
+    const baseRadius = 14 - t * 6 // 14 → 8 (closer to stalk)
+    const height = t * 64 // 0 → 64
+
+    // Once all drop positions are known, cap t so the camera never travels
+    // above the topmost water drop.
+    const numExpected = waterDropRefs.current.length
+    const numResolved = dropsData.current.filter(
+      (dd) => dd && dd.scrollT >= 0,
+    ).length
+    if (numExpected > 0 && numResolved === numExpected) {
+      if (!scrollCapSignal.ready) {
+        scrollCapSignal.maxT = dropsData.current.reduce(
+          (m, dd) => Math.max(m, dd.scrollT),
+          0,
+        )
+        scrollCapSignal.ready = true
+        window.dispatchEvent(
+          new CustomEvent("scrollcapset", {
+            detail: { maxT: scrollCapSignal.maxT },
+          }),
+        )
+      }
+      t = Math.min(t, scrollCapSignal.maxT)
+    }
+
+    /* Spiral path around the beanstalk
+       t=0 → base looking up
+       t=maxT → topmost water drop */
+    const angle = t * Math.PI * 2.8 // ~1.4 full orbits
+    const baseRadius = 14 - t * 6 // 14 → 8 (closer to stalk)
+    const height = t * 64 // 0 → 64
 
     // Weighted blend across ALL drops so there is never a hard winner-switch.
     // Each drop contributes based on a narrow (±10%) smoothstep proximity bell.
     // Dividing by totalWeight normalises the blend so the camera always moves
     // toward a single weighted-average target, not a sharp jump.
-    const blendLook = new THREE.Vector3();
-    const blendFront = new THREE.Vector3();
-    let totalWeight = 0;
+    const blendLook = new THREE.Vector3()
+    const blendFront = new THREE.Vector3()
+    let totalWeight = 0
 
     dropsData.current.forEach((dd) => {
-      if (dd.scrollT < 0) return;
+      if (dd.scrollT < 0) return
       const raw = THREE.MathUtils.clamp(
         1 - Math.abs(t - dd.scrollT) / 0.1,
         0,
         1,
-      );
-      const w = raw * raw * (3 - 2 * raw); // smoothstep
-      blendLook.addScaledVector(dd.pos, w);
-      blendFront.addScaledVector(dd.frontPos, w);
-      totalWeight += w;
-    });
+      )
+      const w = raw * raw * (3 - 2 * raw) // smoothstep
+      blendLook.addScaledVector(dd.pos, w)
+      blendFront.addScaledVector(dd.frontPos, w)
+      totalWeight += w
+    })
 
     // prox: how strongly any drop is influencing right now (capped at 1)
-    const prox = Math.min(1, totalWeight);
+    const prox = Math.min(1, totalWeight)
 
     if (totalWeight > 0) {
-      blendLook.divideScalar(totalWeight);
-      blendFront.divideScalar(totalWeight);
+      blendLook.divideScalar(totalWeight)
+      blendFront.divideScalar(totalWeight)
     }
 
     // Shrink orbit radius as we approach a drop
-    const radius = baseRadius - prox * 4.5;
-    const orbitX = Math.sin(angle) * radius;
-    const orbitZ = Math.cos(angle) * radius;
+    const radius = baseRadius - prox * 4.5
+    const orbitX = Math.sin(angle) * radius
+    const orbitZ = Math.cos(angle) * radius
 
     // Desired camera position — blend between orbit and front-facing position
-    const desiredX = THREE.MathUtils.lerp(orbitX, blendFront.x, prox);
-    const desiredY = THREE.MathUtils.lerp(height + 2, blendFront.y, prox);
-    const desiredZ = THREE.MathUtils.lerp(orbitZ, blendFront.z, prox);
+    const desiredX = THREE.MathUtils.lerp(orbitX, blendFront.x, prox)
+    const desiredY = THREE.MathUtils.lerp(height + 2, blendFront.y, prox)
+    const desiredZ = THREE.MathUtils.lerp(orbitZ, blendFront.z, prox)
 
     // Smooth camera position independently — this is what eliminates jumps/rolls
-    camPos.current.x = THREE.MathUtils.lerp(camPos.current.x, desiredX, 0.04);
-    camPos.current.y = THREE.MathUtils.lerp(camPos.current.y, desiredY, 0.04);
-    camPos.current.z = THREE.MathUtils.lerp(camPos.current.z, desiredZ, 0.04);
-    camera.position.copy(camPos.current);
+    camPos.current.x = THREE.MathUtils.lerp(camPos.current.x, desiredX, 0.04)
+    camPos.current.y = THREE.MathUtils.lerp(camPos.current.y, desiredY, 0.04)
+    camPos.current.z = THREE.MathUtils.lerp(camPos.current.z, desiredZ, 0.04)
+    camera.position.copy(camPos.current)
 
     // Smoothly blend look target toward the active drop (or stalk ahead)
-    const tAhead = Math.min(1, t + 0.04);
-    const stalkAhead = getStalkPosition(tAhead);
+    const tAhead = Math.min(1, t + 0.04)
+    const stalkAhead = getStalkPosition(tAhead)
     const defaultLook = new THREE.Vector3(
       stalkAhead.x,
       height + 9,
       stalkAhead.z,
-    );
-    if (totalWeight > 0) defaultLook.lerp(blendLook, prox);
+    )
+    if (totalWeight > 0) defaultLook.lerp(blendLook, prox)
 
-    lookTarget.current.lerp(defaultLook, 0.035);
-    camera.lookAt(lookTarget.current);
-  });
+    lookTarget.current.lerp(defaultLook, 0.035)
+    camera.lookAt(lookTarget.current)
+  })
 
-  return null;
+  return null
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -187,8 +219,8 @@ function CloudPuff({ position, scale = 1 }) {
         (Math.random() - 0.5) * 6 * scale,
       ],
       s: (0.8 + Math.random() * 1.4) * scale,
-    }));
-  }, [scale]);
+    }))
+  }, [scale])
 
   return (
     <group position={position}>
@@ -207,7 +239,7 @@ function CloudPuff({ position, scale = 1 }) {
         </mesh>
       ))}
     </group>
-  );
+  )
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -310,5 +342,5 @@ export default function Scene({ scrollProgress }) {
       {/* ── Post-processing ──────────────────────────────────── */}
       <Effects />
     </>
-  );
+  )
 }
