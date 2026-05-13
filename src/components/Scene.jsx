@@ -91,38 +91,6 @@ function ScrollCamera({ scrollProgress }) {
       (dd) => dd && dd.scrollT >= 0,
     ).length
     if (numExpected > 0 && numResolved === numExpected) {
-      if (!scrollCapSignal.current.ready) {
-        scrollCapSignal.current.maxT = dropsData.current.reduce(
-          (m, dd) => Math.max(m, dd.scrollT),
-          0,
-        )
-        scrollCapSignal.current.ready = true
-        window.dispatchEvent(
-          new CustomEvent("scrollcapset", {
-            detail: {
-              maxT: scrollCapSignal.current.maxT,
-              dropTs: dropsData.current.map((dd) => dd.scrollT),
-            },
-          }),
-        )
-      }
-      t = Math.min(t, scrollCapSignal.current.maxT)
-    }
-
-    /* Spiral path around the beanstalk
-       t=0 → base looking up
-       t=maxT → topmost water drop */
-    const angle = t * Math.PI * 2.8 // ~1.4 full orbits
-    const baseRadius = 14 - t * 6 // 14 → 8 (closer to stalk)
-    const height = t * 64 // 0 → 64
-
-    // Once all drop positions are known, cap t so the camera never travels
-    // above the topmost water drop.
-    const numExpected = waterDropRefs.current.length
-    const numResolved = dropsData.current.filter(
-      (dd) => dd && dd.scrollT >= 0,
-    ).length
-    if (numExpected > 0 && numResolved === numExpected) {
       if (!scrollCapSignal.ready) {
         scrollCapSignal.maxT = dropsData.current.reduce(
           (m, dd) => Math.max(m, dd.scrollT),
@@ -131,7 +99,10 @@ function ScrollCamera({ scrollProgress }) {
         scrollCapSignal.ready = true
         window.dispatchEvent(
           new CustomEvent("scrollcapset", {
-            detail: { maxT: scrollCapSignal.maxT },
+            detail: {
+              maxT: scrollCapSignal.maxT,
+              dropTs: dropsData.current.map((dd) => dd.scrollT),
+            },
           }),
         )
       }
