@@ -24,6 +24,8 @@ function ScrollCamera({ scrollProgress }) {
   // Per-drop data resolved lazily after the GLB mounts.
   // Each entry: { pos: Vector3, frontPos: Vector3, scrollT: number }
   const dropsData = useRef([]);
+  // Tracks the capped scroll maximum once all drop positions are resolved
+  const scrollCapSignal = useRef({ ready: false, maxT: 1 });
 
   useEffect(() => {
     camera.position.set(12, 66, 12);
@@ -50,14 +52,7 @@ function ScrollCamera({ scrollProgress }) {
 
     // Smooth scroll — gentle lag so fast swipes don't whip the camera
     smooth.current = THREE.MathUtils.lerp(smooth.current, scrollProgress, 0.03);
-    const t = 1 - smooth.current;
-
-    /* Spiral path around the beanstalk
-       t=0 → base looking up
-       t=1 → top, in the clouds */
-    const angle = t * Math.PI * 2.8; // ~1.4 full orbits
-    const baseRadius = 14 - t * 6; // 14 → 8 (closer to stalk)
-    const height = t * 64; // 0 → 64
+    let t = 1 - smooth.current;
 
     // Lazily resolve every waterdrop's world position once it's in the scene
     waterDropRefs.current.forEach((node, i) => {
@@ -93,22 +88,22 @@ function ScrollCamera({ scrollProgress }) {
       (dd) => dd && dd.scrollT >= 0,
     ).length;
     if (numExpected > 0 && numResolved === numExpected) {
-      if (!scrollCapSignal.ready) {
-        scrollCapSignal.maxT = dropsData.current.reduce(
+      if (!scrollCapSignal.current.ready) {
+        scrollCapSignal.current.maxT = dropsData.current.reduce(
           (m, dd) => Math.max(m, dd.scrollT),
           0,
         );
-        scrollCapSignal.ready = true;
+        scrollCapSignal.current.ready = true;
         window.dispatchEvent(
           new CustomEvent("scrollcapset", {
             detail: {
-              maxT: scrollCapSignal.maxT,
+              maxT: scrollCapSignal.current.maxT,
               dropTs: dropsData.current.map((dd) => dd.scrollT),
             },
           }),
         );
       }
-      t = Math.min(t, scrollCapSignal.maxT);
+      t = Math.min(t, scrollCapSignal.current.maxT);
     }
 
     /* Spiral path around the beanstalk
