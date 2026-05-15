@@ -93,10 +93,26 @@ export default function App() {
     dropScrollTsRef.current = dropScrollTs
   }, [dropScrollTs])
 
+  /* Tracks whether a modal that needs scrolling is open — pauses the touch block */
+  const modalScrollOpenRef = useRef(false)
+  useEffect(() => {
+    const open = () => { modalScrollOpenRef.current = true }
+    const close = () => { modalScrollOpenRef.current = false }
+    window.addEventListener("about:modalopen", open)
+    window.addEventListener("about:modalclose", close)
+    return () => {
+      window.removeEventListener("about:modalopen", open)
+      window.removeEventListener("about:modalclose", close)
+    }
+  }, [])
+
   /* On mobile, block manual touch/wheel scrolling — only arrows drive navigation */
   useEffect(() => {
     if (!isMobileRef.current) return
-    const block = (e) => e.preventDefault()
+    const block = (e) => {
+      if (modalScrollOpenRef.current) return
+      e.preventDefault()
+    }
     document.addEventListener("touchmove", block, { passive: false })
     document.addEventListener("wheel", block, { passive: false })
     return () => {

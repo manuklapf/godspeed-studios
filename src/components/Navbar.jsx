@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import ContactModal from "./ContactModal"
+import AboutModal from "./AboutModal"
 
 /* ──────────────────────────────────────────────────────────────
    Text scramble — cycles through random chars before settling
@@ -88,9 +89,11 @@ function WiggleSpan({ text, done }) {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   const logo = useScramble("GODSPEED", { delay: 200, duration: 1400 })
-  const cont = useScramble("CONTACT", { delay: 850, duration: 1200 })
+  const abt = useScramble("ABOUT", { delay: 650, duration: 1100 })
+  const cont = useScramble("CONTACT", { delay: 1050, duration: 1200 })
 
   return (
     <>
@@ -110,6 +113,33 @@ export default function Navbar() {
         </div>
 
         <ul className="nav-links">
+          <li>
+            <button
+              className="nav-contact-btn"
+              onClick={() => setAboutOpen(true)}
+            >
+              <span className="nav-contact-label">
+                <WiggleSpan text={abt.text} done={abt.done} />
+              </span>
+              <span className="nav-contact-icon" aria-label="About">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                </svg>
+              </span>
+            </button>
+          </li>
           <li>
             <button
               className="nav-contact-btn"
@@ -141,6 +171,7 @@ export default function Navbar() {
       </nav>
 
       {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     </>
   )
 }
