@@ -776,6 +776,12 @@ body {
   margin: 0;
 }
 
+@media (max-width: 768px) {
+  .vp-header {
+    padding: 6rem 6vw 3.5rem;
+  }
+}
+
 /* ── Media grid ─────────────────────────────────────────────── */
 .vp-grid {
   display: grid;
@@ -1965,7 +1971,6 @@ body {
     min-width: 0;
   }
   .mk-device {
-    border-radius: 0;
     aspect-ratio: 3 / 4;
   }
   .mk-nav {
@@ -2333,7 +2338,7 @@ body {
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .fc-header {
-    padding: 7rem 5vw 2.5rem;
+    padding: 6rem 5vw 2.5rem;
   }
   .fc-viewer-wrap {
     padding: 2.5rem 5vw 0;
