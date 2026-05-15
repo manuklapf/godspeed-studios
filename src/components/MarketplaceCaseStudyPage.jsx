@@ -61,42 +61,36 @@ const DESIGN_FRAMES = [
     id: "01",
     src: "/marketplace-frames/overview.webp",
     label: "Overview",
-    desc: "Default grid view — 5 columns, floating nav, zoom control",
     type: "desktop",
   },
   {
     id: "02",
     src: "/marketplace-frames/sidebar.webp",
     label: "Category Sidebar",
-    desc: "Slide-in panel with expandable clothing categories and sub-items",
     type: "desktop",
   },
   {
     id: "03",
     src: "/marketplace-frames/zoom.webp",
     label: "Zoomed View",
-    desc: "Fewer columns give each listing more visual weight and detail",
     type: "desktop",
   },
   {
     id: "04",
     src: "/marketplace-frames/detail.webp",
     label: "Product Detail",
-    desc: "Individual listing with image carousel, condition tags, and buy actions",
     type: "desktop",
   },
   {
     id: "05",
     src: "/marketplace-frames/mobile-overview.webp",
     label: "Mobile Overview",
-    desc: "Condensed 3-column grid with round floating controls",
     type: "mobile",
   },
   {
     id: "06",
     src: "/marketplace-frames/mobile-detail.webp",
     label: "Mobile Detail",
-    desc: "Full-bleed product view optimised for one-handed navigation",
     type: "mobile",
   },
 ];
@@ -136,7 +130,10 @@ export default function MarketplaceCaseStudyPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [lightbox, setLightbox] = useState(null); // index into DESIGN_FRAMES
 
-  const openLightbox = (idx) => setLightbox(idx);
+  const openLightbox = (idx) => {
+    if (window.matchMedia("(max-width: 768px)").matches) return;
+    setLightbox(idx);
+  };
   const closeLightbox = () => setLightbox(null);
   const prevFrame = () =>
     setLightbox((i) => (i - 1 + DESIGN_FRAMES.length) % DESIGN_FRAMES.length);
@@ -209,7 +206,6 @@ export default function MarketplaceCaseStudyPage() {
                     <span className="cs-frame-num">{frame.id}</span>
                     <div>
                       <p className="cs-frame-label">{frame.label}</p>
-                      <p className="cs-frame-desc">{frame.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -244,7 +240,6 @@ export default function MarketplaceCaseStudyPage() {
                     <span className="cs-frame-num">{frame.id}</span>
                     <div>
                       <p className="cs-frame-label">{frame.label}</p>
-                      <p className="cs-frame-desc">{frame.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -310,9 +305,6 @@ export default function MarketplaceCaseStudyPage() {
                 <span className="cs-lb-num">{DESIGN_FRAMES[lightbox].id}</span>
                 <span className="cs-lb-label">
                   {DESIGN_FRAMES[lightbox].label}
-                </span>
-                <span className="cs-lb-desc">
-                  {DESIGN_FRAMES[lightbox].desc}
                 </span>
               </div>
             </div>

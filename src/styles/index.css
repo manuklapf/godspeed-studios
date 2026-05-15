@@ -5,6 +5,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -36,6 +37,9 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  outline: none;
 }
 
 /* ─── UI Overlay ─────────────────────────────────────────────── */
@@ -201,6 +205,11 @@ body {
   .drop-nav-list {
     display: none !important;
   }
+
+  /* Hide scroll-up hint on mobile — arrows replace it */
+  .scroll-hint {
+    display: none !important;
+  }
 }
 
 /* Drop navigation list — right-side vertical TOC */
@@ -325,6 +334,56 @@ body {
   50% {
     transform: rotate(-135deg) translateY(-9px) translateX(-9px);
     opacity: 1;
+  }
+}
+
+/* ─── Mobile drop navigation arrows ─────────────────────────── */
+.mobile-drop-arrow {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  .mobile-drop-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    pointer-events: all;
+    z-index: 20;
+    outline: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      opacity 0.3s ease,
+      background 0.2s ease;
+  }
+
+  .mobile-drop-arrow svg {
+    width: 4rem;
+    height: 4rem;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
+  }
+
+  .mobile-drop-arrow--up {
+    top: 5rem; /* below navbar */
+  }
+
+  .mobile-drop-arrow--down {
+    bottom: 5vh;
+  }
+
+  .mobile-drop-arrow--hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
@@ -606,6 +665,16 @@ body {
   color: rgba(200, 240, 210, 0.95);
   border-color: rgba(100, 180, 120, 0.55);
   background: rgba(10, 35, 18, 0.85);
+}
+
+@media (max-width: 768px) {
+  .page-back-btn {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .page-back-arrow {
+    display: none;
+  }
 }
 
 /* ─── Generic Project Page content ──────────────────────────── */
@@ -978,6 +1047,11 @@ body {
   background: rgba(10, 35, 18, 0.85);
 }
 
+@media (max-width: 768px) {
+  .cs-header {
+    padding: 5rem 6vw 3rem;
+  }
+}
 /* ── Design Frames Showcase ────────────────────────────────── */
 .cs-frames {
   padding: 3.5rem 6vw 4rem;
@@ -1067,6 +1141,7 @@ body {
 .cs-frame-img-wrap img {
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
   display: block;
 }
@@ -1124,6 +1199,19 @@ body {
 }
 .cs-frame-card:hover .cs-frame-hover-hint {
   opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .cs-frame-card:hover {
+    transform: none;
+  }
+  .cs-frame-card:hover .cs-frame-img-wrap {
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+  .cs-frame-card:hover .cs-frame-hover-hint {
+    opacity: 0;
+  }
 }
 
 /* ── Lightbox ──────────────────────────────────────────────────── */
@@ -1254,7 +1342,7 @@ body {
   padding: 2.5rem 4vw 3.5rem;
   display: flex;
   justify-content: center;
-  min-height: 45rem;
+  min-height: 30rem;
 }
 
 /* ── Device frame ────────────────────────────────────────────── */
@@ -1860,7 +1948,7 @@ body {
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .mk-section {
-    padding: 1.5rem 0 0;
+    padding: 1.5rem 0.5rem 0.5rem;
   }
   .cs-frames {
     padding: 2.5rem 5vw 3rem;
@@ -2255,12 +2343,14 @@ body {
   }
   .fc-canvas-wrap {
     height: 60vw;
-    min-height: 260px;
+    min-height: 30rem;
   }
 }
 
 /* ─── Contact nav button ─────────────────────────────────────── */
 .nav-contact-btn {
+  justify-content: center;
+  display: flex;
   background: none;
   border: none;
   padding: 0;

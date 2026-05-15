@@ -8,7 +8,7 @@ import React, {
 import { Canvas } from "@react-three/fiber"
 import { Preload, useProgress } from "@react-three/drei"
 import { useNavigate } from "react-router-dom"
-import Scene from "./components/Scene"
+import Scene, { scrollCapSignal } from "./components/Scene"
 import Navbar from "./components/Navbar"
 import { dropClickBus } from "./components/Beanstalk"
 import { allDroplets } from "./data/portfolio"
@@ -77,10 +77,33 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false)
   const [dropScrollTs, setDropScrollTs] = useState([])
   const [whiteFade, setWhiteFade] = useState(false)
+  const [activeDropIdx, setActiveDropIdx] = useState(-1)
   const navigate = useNavigate()
   // Minimum scroll fraction (0–1) enforced once drop positions are resolved.
   // Prevents scrolling above the topmost water drop.
   const minScrollFractionRef = useRef(0)
+  // Detect mobile once on mount
+  const isMobileRef = useRef(
+    typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 768px)").matches,
+  )
+  // Keep a ref to dropScrollTs so the scroll handler sees the latest value
+  const dropScrollTsRef = useRef([])
+  useEffect(() => {
+    dropScrollTsRef.current = dropScrollTs
+  }, [dropScrollTs])
+
+  /* On mobile, block manual touch/wheel scrolling — only arrows drive navigation */
+  useEffect(() => {
+    if (!isMobileRef.current) return
+    const block = (e) => e.preventDefault()
+    document.addEventListener("touchmove", block, { passive: false })
+    document.addEventListener("wheel", block, { passive: false })
+    return () => {
+      document.removeEventListener("touchmove", block)
+      document.removeEventListener("wheel", block)
+    }
+  }, [])
 
   /* Track raw scroll progress 0→1 */
   useEffect(() => {
@@ -98,6 +121,22 @@ export default function App() {
       const p = raw
       setScrollProgress(p)
       setScrolled(p > 0.02)
+
+      // Track nearest drop index for mobile arrow visibility
+      const ts = dropScrollTsRef.current
+      if (ts.length > 0) {
+        const t = 1 - p
+        let bestDist = Infinity
+        let nearestIdx = 0
+        ts.forEach((st, i) => {
+          const dist = Math.abs(t - st)
+          if (dist < bestDist) {
+            bestDist = dist
+            nearestIdx = i
+          }
+        })
+        setActiveDropIdx(nearestIdx)
+      }
 
       /* Determine which droplet section is closest */
       const idx = allDroplets.findIndex((d, i) => {
@@ -117,7 +156,18 @@ export default function App() {
     const handler = (e) => {
       // scrollProgress = 1 - t, so minFraction = 1 - maxT
       minScrollFractionRef.current = 1 - e.detail.maxT
-      if (e.detail.dropTs) setDropScrollTs(e.detail.dropTs)
+      if (e.detail.dropTs) {
+        setDropScrollTs(e.detail.dropTs)
+        // Always start focused on the last (highest) waterdrop
+        if (e.detail.dropTs.length > 0) {
+          const lastIdx = e.detail.dropTs.length - 1
+          const lastDropT = e.detail.dropTs[lastIdx]
+          const sp = 1 - lastDropT
+          const max = document.documentElement.scrollHeight - window.innerHeight
+          window.scrollTo({ top: Math.round(sp * max), behavior: "instant" })
+          setActiveDropIdx(lastIdx)
+        }
+      }
     }
     window.addEventListener("scrollcapset", handler)
     return () => window.removeEventListener("scrollcapset", handler)
@@ -132,6 +182,21 @@ export default function App() {
     // Clear any leftover zoom state from a previous droplet click
     dropClickBus.active = false
     dropClickBus.targetPos = null
+  }, [])
+
+  /* If navigating back to this page the scrollcapset event won't re-fire
+     (scrollCapSignal.ready is already true). Re-apply last-drop focus now. */
+  useEffect(() => {
+    if (!scrollCapSignal.ready || scrollCapSignal.dropTs == null) return
+    const ts = scrollCapSignal.dropTs
+    if (ts.length === 0) return
+    minScrollFractionRef.current = 1 - scrollCapSignal.maxT
+    setDropScrollTs(ts)
+    const lastIdx = ts.length - 1
+    const sp = 1 - ts[lastIdx]
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    window.scrollTo({ top: Math.round(sp * max), behavior: "instant" })
+    setActiveDropIdx(lastIdx)
   }, [])
 
   /* Intro animation */
@@ -226,6 +291,50 @@ export default function App() {
           <span>Scroll</span>
           <div className="scroll-arrow" />
         </div>
+
+        {/* Mobile-only: up / down arrows to jump between waterdrops */}
+        {isMobileRef.current && dropScrollTs.length > 0 && (
+          <>
+            <button
+              className={`mobile-drop-arrow mobile-drop-arrow--up${
+                activeDropIdx <= 0 ? " mobile-drop-arrow--hidden" : ""
+              }`}
+              onClick={() => scrollToDropIdx(activeDropIdx - 1)}
+              aria-label="Previous waterdrop"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            </button>
+            <button
+              className={`mobile-drop-arrow mobile-drop-arrow--down${
+                activeDropIdx >= dropScrollTs.length - 1
+                  ? " mobile-drop-arrow--hidden"
+                  : ""
+              }`}
+              onClick={() => scrollToDropIdx(activeDropIdx + 1)}
+              aria-label="Next waterdrop"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
     </>
   )

@@ -14,6 +14,14 @@ function useScramble(target, { delay = 0, duration = 1200 } = {}) {
   useEffect(() => {
     let start = null
     let timeoutId = null
+    let forceId = null
+
+    function finish() {
+      if (frame.current) cancelAnimationFrame(frame.current)
+      frame.current = null
+      setDisplay(target)
+      setDone(true)
+    }
 
     function tick(timestamp) {
       if (!start) start = timestamp
@@ -35,8 +43,7 @@ function useScramble(target, { delay = 0, duration = 1200 } = {}) {
       if (progress < 1) {
         frame.current = requestAnimationFrame(tick)
       } else {
-        setDisplay(target)
-        setDone(true)
+        finish()
       }
     }
 
@@ -44,8 +51,13 @@ function useScramble(target, { delay = 0, duration = 1200 } = {}) {
       frame.current = requestAnimationFrame(tick)
     }, delay)
 
+    // Hard guarantee: always finish within delay + duration + 400 ms,
+    // regardless of rAF throttling on slow / backgrounded devices.
+    forceId = setTimeout(finish, delay + duration + 400)
+
     return () => {
       clearTimeout(timeoutId)
+      clearTimeout(forceId)
       if (frame.current) cancelAnimationFrame(frame.current)
     }
   }, [target, delay, duration])

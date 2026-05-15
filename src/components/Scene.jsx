@@ -35,6 +35,14 @@ function ScrollCamera({ scrollProgress }) {
   const defaultLookRef = useRef(new THREE.Vector3())
 
   useEffect(() => {
+    // Zoom out on mobile so the beanstalk is fully visible
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 768px)").matches
+    ) {
+      camera.fov = 80
+      camera.updateProjectionMatrix()
+    }
     camera.position.set(12, 66, 12)
     camera.lookAt(0, 62, 0)
   }, [camera])
@@ -100,12 +108,13 @@ function ScrollCamera({ scrollProgress }) {
           (m, dd) => Math.max(m, dd.scrollT),
           0,
         )
+        scrollCapSignal.dropTs = dropsData.current.map((dd) => dd.scrollT)
         scrollCapSignal.ready = true
         window.dispatchEvent(
           new CustomEvent("scrollcapset", {
             detail: {
               maxT: scrollCapSignal.maxT,
-              dropTs: dropsData.current.map((dd) => dd.scrollT),
+              dropTs: scrollCapSignal.dropTs,
             },
           }),
         )
