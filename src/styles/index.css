@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "Head Human Bold";
+  src: url("/headhumanbold.ttf") format("truetype");
+}
+
 /* ─── Reset & Base ─────────────────────────────────────────── */
 *,
 *::before,
@@ -70,11 +75,6 @@ body {
   /* mix-blend-mode keeps text punching through any background */
   mix-blend-mode: difference;
   color: #ffffff;
-}
-
-@font-face {
-  font-family: "Head Human Bold";
-  src: url('/headhumanbold.ttf') format('truetype');
 }
 
 .godspeed-logo {
@@ -1339,9 +1339,7 @@ body {
 
 @font-face {
   font-family: "PicNic";
-  src:
-    url("/PicNic.woff2") format("woff2"),
-    url("/PicNic.woff") format("woff");
+  src: url("/PicNic-Regular.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
