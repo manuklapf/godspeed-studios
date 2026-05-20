@@ -72,6 +72,11 @@ body {
   color: #ffffff;
 }
 
+@font-face {
+  font-family: "Head Human Bold";
+  src: url(headhumanbold.ttf);
+}
+
 .godspeed-logo {
   font-family: "Head Human Bold", monospace;
   font-size: 1.5rem;
