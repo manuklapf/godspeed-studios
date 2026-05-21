@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import {
   EffectComposer,
   Bloom,
@@ -16,6 +16,18 @@ import { BlendFunction } from "postprocessing"
    3. Vignette — darkens edges (depth / drama)
    ────────────────────────────────────────────────────────────── */
 export default function Effects() {
+  const [granularity, setGranularity] = useState(
+    window.innerWidth < 768 ? 2 : 3,
+  )
+
+  useEffect(() => {
+    const handleResize = () => {
+      setGranularity(window.innerWidth < 768 ? 2 : 3)
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
     <EffectComposer multisampling={0}>
       {/*
@@ -36,7 +48,7 @@ export default function Effects() {
         Pixelation — gives the scene a low-poly / game aesthetic.
         granularity 3 = moderate pixel blocks (increase for stronger effect).
       */}
-      <Pixelation granularity={3} />
+      <Pixelation granularity={granularity} />
 
       {/*
         Vignette — subtle edge darkening for cinematic depth.
