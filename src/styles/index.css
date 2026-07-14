@@ -1598,12 +1598,17 @@ body {
 
 .mk-search-input {
   background: none;
+  font-family: "League Spartan", sans-serif;
   border: none;
   outline: none;
   color: rgba(0, 0, 0, 0.5);
   font-size: 0.72rem;
   width: 90px;
-  cursor: default;
+  cursor: text;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mk-search-bar--open .mk-search-input {
+  width: 200px;
 }
 
 .mk-search-btn {
@@ -2106,7 +2111,7 @@ body {
 
 /* ── 3D Viewer ───────────────────────────────────────────────── */
 .fc-viewer-wrap {
-  padding: 3.5rem 6vw 0;
+  padding: 3rem 6vw;
 }
 
 .fc-viewer-label {
@@ -2306,7 +2311,7 @@ body {
 }
 
 .fc-body {
-  padding: 4rem 6vw 6rem;
+  padding: 3.5rem 6vw 0rem;
 }
 
 .fc-body-inner {

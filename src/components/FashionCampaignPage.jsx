@@ -616,12 +616,24 @@ export default function FashionCampaignPage() {
             Campaign
           </h1>
         </header>
+        <div className="fc-body">
+          <div className="fc-body-inner">
+            <span className="fc-section-eyebrow">Concept</span>
+            <h2 className="fc-section-title">Draw Your Tattoo</h2>
+            <p className="fc-section-text">
+              The gashapon machine is reimagined as a tattoo oracle. Turn the
+              crank, and chance decides your character. Each capsule holds a
+              design you might wear permanently.
+            </p>
+            <p className="fc-section-text">
+              The campaign sits at the intersection of collectible culture and
+              body art. The machine becomes the artist, the wearer becomes the
+              canvas, and commitment is the only rule.
+            </p>
+          </div>
+        </div>
 
         <div className="fc-viewer-wrap">
-          <div className="fc-viewer-label">
-            <h2 className="fc-viewer-title">Gashapon</h2>
-            <p className="fc-viewer-desc">Click the crank · drag to orbit</p>
-          </div>
           <div className="fc-canvas-wrap">
             <Canvas
               camera={{
@@ -683,23 +695,6 @@ export default function FashionCampaignPage() {
             {showNextBtn && (
               <CanvasOverlay text="↺ Draw again" onClick={handleNextClick} />
             )}
-          </div>
-        </div>
-
-        <div className="fc-body">
-          <div className="fc-body-inner">
-            <span className="fc-section-eyebrow">Concept</span>
-            <h2 className="fc-section-title">Draw Your Tattoo</h2>
-            <p className="fc-section-text">
-              The gashapon machine is reimagined as a tattoo oracle. Turn the
-              crank, and chance decides your character. Each capsule holds a
-              design you might wear permanently.
-            </p>
-            <p className="fc-section-text">
-              The campaign sits at the intersection of collectible culture and
-              body art. The machine becomes the artist, the wearer becomes the
-              canvas, and commitment is the only rule.
-            </p>
           </div>
         </div>
       </section>

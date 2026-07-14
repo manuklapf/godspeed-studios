@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import PageWrapper from "./PageWrapper";
+import React, { useState } from "react"
+import PageWrapper from "./PageWrapper"
 
 const ITEMS = [
   "Frame 2",
@@ -27,7 +27,7 @@ const ITEMS = [
   "Frame 24",
   "Frame 25",
   "Frame 26",
-].map((name, i) => ({ id: i, src: `/marketplace/${name}.webp` }));
+].map((name, i) => ({ id: i, src: `/marketplace/${name}.webp` }))
 
 const CATEGORIES = [
   {
@@ -49,12 +49,12 @@ const CATEGORIES = [
   { label: "Accessories", items: [] },
   { label: "Home Goods", items: [] },
   { label: "Sports", items: [] },
-];
+]
 
 const FOOTER_LINKS = [
   ["About", "Contact", "Impressum"],
   ["Shipping", "Privacy", "Terms"],
-];
+]
 
 const DESIGN_FRAMES = [
   {
@@ -93,7 +93,7 @@ const DESIGN_FRAMES = [
     label: "Mobile Detail",
     type: "mobile",
   },
-];
+]
 
 function ChevronDown() {
   return (
@@ -106,7 +106,7 @@ function ChevronDown() {
         strokeLinejoin="round"
       />
     </svg>
-  );
+  )
 }
 function ChevronRight() {
   return (
@@ -119,37 +119,39 @@ function ChevronRight() {
         strokeLinejoin="round"
       />
     </svg>
-  );
+  )
 }
 
 export default function MarketplaceCaseStudyPage() {
-  const [zoom, setZoom] = useState(50);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openCat, setOpenCat] = useState("Clothing");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [lightbox, setLightbox] = useState(null); // index into DESIGN_FRAMES
+  const [zoom, setZoom] = useState(50)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openCat, setOpenCat] = useState("Clothing")
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
+  const [lightbox, setLightbox] = useState(null) // index into DESIGN_FRAMES
 
   const openLightbox = (idx) => {
-    if (window.matchMedia("(max-width: 768px)").matches) return;
-    setLightbox(idx);
-  };
-  const closeLightbox = () => setLightbox(null);
+    if (window.matchMedia("(max-width: 768px)").matches) return
+    setLightbox(idx)
+  }
+  const closeLightbox = () => setLightbox(null)
   const prevFrame = () =>
-    setLightbox((i) => (i - 1 + DESIGN_FRAMES.length) % DESIGN_FRAMES.length);
-  const nextFrame = () => setLightbox((i) => (i + 1) % DESIGN_FRAMES.length);
+    setLightbox((i) => (i - 1 + DESIGN_FRAMES.length) % DESIGN_FRAMES.length)
+  const nextFrame = () => setLightbox((i) => (i + 1) % DESIGN_FRAMES.length)
 
   const toggleFilter = () => {
-    setFilterOpen((o) => !o);
-    setCartOpen(false);
-  };
+    setFilterOpen((o) => !o)
+    setCartOpen(false)
+  }
   const toggleCart = () => {
-    setCartOpen((o) => !o);
-    setFilterOpen(false);
-  };
+    setCartOpen((o) => !o)
+    setFilterOpen(false)
+  }
 
   // zoom 0 → 8 cols, zoom 100 → 2 cols
-  const cols = Math.max(2, Math.round(8 - (zoom / 100) * 6));
+  const cols = Math.max(2, Math.round(8 - (zoom / 100) * 6))
 
   return (
     <PageWrapper>
@@ -162,178 +164,16 @@ export default function MarketplaceCaseStudyPage() {
             Marketplace
           </h1>
           <p className="cs-subtitle">
-            A UI/UX case study for a peer-to-peer resale platform — from
-            research through to high-fidelity Figma prototypes.
+            A UI/UX case study for a peer-to-peer resale platform. From research
+            through to high-fidelity Figma prototypes.
           </p>
         </header>
 
-        {/* ── Design Frames Showcase ────────────────────────── */}
-        <div className="cs-frames">
-          <div className="cs-frames-hd">
-            <span className="cs-frames-eyebrow">Figma Prototype</span>
-            <h2 className="cs-frames-title">Design Explorations</h2>
-            <p className="cs-frames-sub">
-              Before building the interactive prototype, the full UI was
-              designed in Figma — exploring layout, navigation patterns, and
-              mobile responsiveness across all key screens.
-            </p>
-          </div>
-
-          <div className="cs-frames-desktop">
-            {DESIGN_FRAMES.filter((f) => f.type === "desktop").map(
-              (frame, i) => (
-                <div
-                  key={frame.id}
-                  className="cs-frame-card"
-                  onClick={() => openLightbox(DESIGN_FRAMES.indexOf(frame))}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" &&
-                    openLightbox(DESIGN_FRAMES.indexOf(frame))
-                  }
-                >
-                  <div className="cs-frame-img-wrap cs-frame-img-wrap--desktop">
-                    <img
-                      src={frame.src}
-                      alt={frame.label}
-                      loading="lazy"
-                      draggable={false}
-                    />
-                    <div className="cs-frame-hover-hint">View</div>
-                  </div>
-                  <div className="cs-frame-meta">
-                    <span className="cs-frame-num">{frame.id}</span>
-                    <div>
-                      <p className="cs-frame-label">{frame.label}</p>
-                    </div>
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-
-          <div className="cs-frames-mobile">
-            {DESIGN_FRAMES.filter((f) => f.type === "mobile").map(
-              (frame, i) => (
-                <div
-                  key={frame.id}
-                  className="cs-frame-card cs-frame-card--mobile"
-                  onClick={() => openLightbox(DESIGN_FRAMES.indexOf(frame))}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" &&
-                    openLightbox(DESIGN_FRAMES.indexOf(frame))
-                  }
-                >
-                  <div className="cs-frame-img-wrap cs-frame-img-wrap--mobile">
-                    <img
-                      src={frame.src}
-                      alt={frame.label}
-                      loading="lazy"
-                      draggable={false}
-                    />
-                    <div className="cs-frame-hover-hint">View</div>
-                  </div>
-                  <div className="cs-frame-meta">
-                    <span className="cs-frame-num">{frame.id}</span>
-                    <div>
-                      <p className="cs-frame-label">{frame.label}</p>
-                    </div>
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-
-        {/* ── Lightbox ───────────────────────────────── */}
-        {lightbox !== null && (
-          <div className="cs-lb-backdrop" onClick={closeLightbox}>
-            <button
-              className="cs-lb-close"
-              onClick={closeLightbox}
-              aria-label="Close"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <line
-                  x1="1"
-                  y1="1"
-                  x2="13"
-                  y2="13"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <line
-                  x1="13"
-                  y1="1"
-                  x2="1"
-                  y2="13"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-            <button
-              className="cs-lb-arrow cs-lb-arrow--prev"
-              onClick={(e) => {
-                e.stopPropagation();
-                prevFrame();
-              }}
-              aria-label="Previous"
-            >
-              <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-                <path
-                  d="M9 1L1 9l8 8"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <div className="cs-lb-content" onClick={(e) => e.stopPropagation()}>
-              <img
-                src={DESIGN_FRAMES[lightbox].src}
-                alt={DESIGN_FRAMES[lightbox].label}
-                className="cs-lb-img"
-              />
-              <div className="cs-lb-meta">
-                <span className="cs-lb-num">{DESIGN_FRAMES[lightbox].id}</span>
-                <span className="cs-lb-label">
-                  {DESIGN_FRAMES[lightbox].label}
-                </span>
-              </div>
-            </div>
-            <button
-              className="cs-lb-arrow cs-lb-arrow--next"
-              onClick={(e) => {
-                e.stopPropagation();
-                nextFrame();
-              }}
-              aria-label="Next"
-            >
-              <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-                <path
-                  d="M1 1l8 8-8 8"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-        )}
-
         {/* ── Marketplace UI Mockup ──────────────────────────── */}
-        <div className="cs-prototype-hd">
+        {/* <div className="cs-prototype-hd">
           <span className="cs-frames-eyebrow">Interactive</span>
           <h2 className="cs-frames-title">Prototype</h2>
-        </div>
+        </div> */}
         <div className="mk-section">
           <div className="mk-device">
             {/* ── Sidebar ───────────────────────────────────────── */}
@@ -466,7 +306,12 @@ export default function MarketplaceCaseStudyPage() {
                       />
                     </svg>
                   </button>
-                  <div className="mk-search-bar">
+                  <div
+                    className={`mk-search-bar${
+                      searchOpen ? " mk-search-bar--open" : ""
+                    }`}
+                    onClick={() => setSearchOpen(true)}
+                  >
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <circle
                         cx="6"
@@ -487,9 +332,14 @@ export default function MarketplaceCaseStudyPage() {
                     </svg>
                     <input
                       className="mk-search-input"
-                      placeholder=""
+                      placeholder="Search"
                       aria-label="Search"
-                      readOnly
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      onFocus={() => setSearchOpen(true)}
+                      onBlur={() => {
+                        if (!searchValue) setSearchOpen(false)
+                      }}
                     />
                   </div>
                   <button className="mk-search-btn" aria-label="Search">
@@ -604,8 +454,8 @@ export default function MarketplaceCaseStudyPage() {
                 <div
                   className="mk-backdrop"
                   onClick={() => {
-                    setFilterOpen(false);
-                    setCartOpen(false);
+                    setFilterOpen(false)
+                    setCartOpen(false)
                   }}
                 />
               )}
@@ -735,7 +585,169 @@ export default function MarketplaceCaseStudyPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Design Frames Showcase ────────────────────────── */}
+        <div className="cs-frames">
+          <div className="cs-frames-hd">
+            <span className="cs-frames-eyebrow">Figma Prototype</span>
+            <h2 className="cs-frames-title">Design Explorations</h2>
+            <p className="cs-frames-sub">
+              Before building the interactive prototype, the full UI was
+              designed in Figma. I explored layout, navigation patterns, and
+              mobile concepts across all key screens.
+            </p>
+          </div>
+
+          <div className="cs-frames-desktop">
+            {DESIGN_FRAMES.filter((f) => f.type === "desktop").map(
+              (frame, i) => (
+                <div
+                  key={frame.id}
+                  className="cs-frame-card"
+                  onClick={() => openLightbox(DESIGN_FRAMES.indexOf(frame))}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    openLightbox(DESIGN_FRAMES.indexOf(frame))
+                  }
+                >
+                  <div className="cs-frame-img-wrap cs-frame-img-wrap--desktop">
+                    <img
+                      src={frame.src}
+                      alt={frame.label}
+                      loading="lazy"
+                      draggable={false}
+                    />
+                    <div className="cs-frame-hover-hint">View</div>
+                  </div>
+                  <div className="cs-frame-meta">
+                    <span className="cs-frame-num">{frame.id}</span>
+                    <div>
+                      <p className="cs-frame-label">{frame.label}</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+
+          <div className="cs-frames-mobile">
+            {DESIGN_FRAMES.filter((f) => f.type === "mobile").map(
+              (frame, i) => (
+                <div
+                  key={frame.id}
+                  className="cs-frame-card cs-frame-card--mobile"
+                  onClick={() => openLightbox(DESIGN_FRAMES.indexOf(frame))}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    openLightbox(DESIGN_FRAMES.indexOf(frame))
+                  }
+                >
+                  <div className="cs-frame-img-wrap cs-frame-img-wrap--mobile">
+                    <img
+                      src={frame.src}
+                      alt={frame.label}
+                      loading="lazy"
+                      draggable={false}
+                    />
+                    <div className="cs-frame-hover-hint">View</div>
+                  </div>
+                  <div className="cs-frame-meta">
+                    <span className="cs-frame-num">{frame.id}</span>
+                    <div>
+                      <p className="cs-frame-label">{frame.label}</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+
+        {/* ── Lightbox ───────────────────────────────── */}
+        {lightbox !== null && (
+          <div className="cs-lb-backdrop" onClick={closeLightbox}>
+            <button
+              className="cs-lb-close"
+              onClick={closeLightbox}
+              aria-label="Close"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <line
+                  x1="1"
+                  y1="1"
+                  x2="13"
+                  y2="13"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="13"
+                  y1="1"
+                  x2="1"
+                  y2="13"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            <button
+              className="cs-lb-arrow cs-lb-arrow--prev"
+              onClick={(e) => {
+                e.stopPropagation()
+                prevFrame()
+              }}
+              aria-label="Previous"
+            >
+              <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                <path
+                  d="M9 1L1 9l8 8"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div className="cs-lb-content" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={DESIGN_FRAMES[lightbox].src}
+                alt={DESIGN_FRAMES[lightbox].label}
+                className="cs-lb-img"
+              />
+              <div className="cs-lb-meta">
+                <span className="cs-lb-num">{DESIGN_FRAMES[lightbox].id}</span>
+                <span className="cs-lb-label">
+                  {DESIGN_FRAMES[lightbox].label}
+                </span>
+              </div>
+            </div>
+            <button
+              className="cs-lb-arrow cs-lb-arrow--next"
+              onClick={(e) => {
+                e.stopPropagation()
+                nextFrame()
+              }}
+              aria-label="Next"
+            >
+              <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                <path
+                  d="M1 1l8 8-8 8"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
       </section>
     </PageWrapper>
-  );
+  )
 }
