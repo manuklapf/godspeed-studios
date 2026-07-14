@@ -3,6 +3,16 @@
   src: url("/headhumanbold.ttf") format("truetype");
 }
 
+@font-face {
+  font-family: "Univers TE-20 Light";
+  src: url("/UniversTE20-Light.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Univers TE-20 Thin";
+  src: url("/UniversTE20-Thin.ttf") format("truetype");
+}
+
 /* ─── Reset & Base ─────────────────────────────────────────── */
 *,
 *::before,
@@ -20,7 +30,7 @@ html {
 body {
   background: #c2dff0;
   overflow-x: hidden;
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   color: #2a4a3a;
 }
 
@@ -104,7 +114,7 @@ body {
 .nav-links a,
 .nav-links .nav-contact-btn {
   text-decoration: none;
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -252,7 +262,7 @@ body {
 }
 
 .drop-nav-label {
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1rem;
   text-transform: uppercase;
   color: #fff;
@@ -280,10 +290,10 @@ body {
 }
 
 .section-label h2 {
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 0 16px rgba(120, 210, 180, 0.8);
+  text-shadow: 0 0 16px rgba(200, 204, 212, 0.55);
   letter-spacing: 0.08em;
 }
 
@@ -318,7 +328,7 @@ body {
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 0 8px rgba(160, 230, 200, 0.5);
+  text-shadow: 0 0 8px rgba(200, 204, 212, 0.4);
 }
 
 .scroll-arrow {
@@ -327,7 +337,7 @@ body {
   border-right: 2px solid rgba(255, 255, 255, 0.6);
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   animation: arrowBounce 1.8s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(160, 230, 200, 0.6));
+  filter: drop-shadow(0 0 4px rgba(200, 204, 212, 0.5));
 }
 
 @keyframes arrowBounce {
@@ -431,7 +441,7 @@ body {
 }
 
 .droplet-card h3 {
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1rem;
   color: #1a3a2a;
   margin-bottom: 0.4rem;
@@ -558,7 +568,7 @@ body {
 
 .speech-bubble-title {
   display: block;
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
   color: #111111;
@@ -628,8 +638,8 @@ body {
 .beanstalk-page {
   position: relative;
   min-height: 100vh;
-  background: #06100a;
-  color: #d8e8dc;
+  background: #0a0a0b;
+  color: #e8e8ea;
   opacity: 0;
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
 }
@@ -648,17 +658,17 @@ body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 1.2rem;
-  background: rgba(6, 20, 10, 0.72);
+  background: rgba(10, 10, 11, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(100, 180, 120, 0.22);
+  border: 1px solid rgba(168, 172, 180, 0.22);
   border-radius: 100px;
   font-family: inherit;
   font-size: 0.65rem;
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(160, 210, 175, 0.7);
+  color: rgba(210, 213, 218, 0.7);
   cursor: pointer;
   transition:
     color 0.25s,
@@ -667,9 +677,9 @@ body {
 }
 
 .page-back-btn:hover {
-  color: rgba(200, 240, 210, 0.95);
-  border-color: rgba(100, 180, 120, 0.55);
-  background: rgba(10, 35, 18, 0.85);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(168, 172, 180, 0.55);
+  background: rgba(26, 26, 29, 0.85);
 }
 
 @media (max-width: 768px) {
@@ -693,7 +703,7 @@ body {
   font-size: 0.65rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   margin-bottom: 1.2rem;
 }
 
@@ -701,14 +711,14 @@ body {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8f2ec;
+  color: #e8e8ea;
   margin: 0 0 1.2rem;
   line-height: 1.1;
 }
 
 .project-subtitle {
   font-size: 0.95rem;
-  color: rgba(180, 220, 190, 0.65);
+  color: rgba(210, 213, 218, 0.65);
   margin: 0 0 0.4rem;
 }
 
@@ -716,7 +726,7 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   opacity: 0.7;
   margin: 0 0 2.5rem;
 }
@@ -724,7 +734,7 @@ body {
 .project-description {
   font-size: 1rem;
   line-height: 1.85;
-  color: rgba(200, 230, 210, 0.75);
+  color: rgba(216, 219, 224, 0.75);
   margin: 0 0 2.5rem;
 }
 
@@ -733,9 +743,9 @@ body {
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   text-decoration: none;
-  border-bottom: 1px solid rgba(74, 154, 100, 0.5);
+  border-bottom: 1px solid rgba(168, 172, 180, 0.5);
   padding-bottom: 3px;
   transition:
     color 0.2s,
@@ -743,8 +753,8 @@ body {
 }
 
 .project-link:hover {
-  color: #7ec898;
-  border-color: rgba(126, 200, 152, 0.7);
+  color: #eef0f3;
+  border-color: rgba(220, 223, 228, 0.7);
 }
 
 /* ─── Video & Photography Page ───────────────────────────────── */
@@ -752,7 +762,7 @@ body {
 
 .vp-header {
   padding: 8rem 6vw 3.5rem;
-  border-bottom: 1px solid rgba(80, 160, 90, 0.1);
+  border-bottom: 1px solid rgba(168, 172, 180, 0.1);
 }
 
 .vp-tag {
@@ -760,7 +770,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   margin-bottom: 1rem;
 }
 
@@ -768,7 +778,7 @@ body {
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8f2ec;
+  color: #e8e8ea;
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
@@ -776,7 +786,7 @@ body {
 .vp-subtitle {
   font-size: 0.85rem;
   line-height: 1.75;
-  color: rgba(180, 220, 190, 0.5);
+  color: rgba(210, 213, 218, 0.5);
   max-width: 480px;
   margin: 0;
 }
@@ -834,7 +844,7 @@ body {
 .vp-cell {
   position: relative;
   overflow: hidden;
-  background: #0a1810;
+  background: #0d0d0e;
 }
 
 /* ── Photo cell ─────────────────────────────────────────────── */
@@ -999,7 +1009,7 @@ body {
 
 .cs-header {
   padding: 8rem 6vw 3rem;
-  border-bottom: 1px solid rgba(80, 160, 90, 0.12);
+  border-bottom: 1px solid rgba(168, 172, 180, 0.12);
   flex-shrink: 0;
 }
 
@@ -1008,7 +1018,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   margin-bottom: 1rem;
 }
 
@@ -1016,7 +1026,7 @@ body {
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8f2ec;
+  color: #e8e8ea;
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
@@ -1024,7 +1034,7 @@ body {
 .cs-subtitle {
   font-size: 0.85rem;
   line-height: 1.75;
-  color: rgba(180, 220, 190, 0.5);
+  color: rgba(210, 213, 218, 0.5);
   max-width: 480px;
   margin: 0;
 }
@@ -1035,17 +1045,17 @@ body {
   gap: 0.4rem;
   margin-top: 2rem;
   padding: 0.55rem 1.2rem;
-  background: rgba(6, 20, 10, 0.72);
+  background: rgba(10, 10, 11, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(100, 180, 120, 0.22);
+  border: 1px solid rgba(168, 172, 180, 0.22);
   border-radius: 100px;
   font-family: inherit;
   font-size: 0.65rem;
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(160, 210, 175, 0.7);
+  color: rgba(210, 213, 218, 0.7);
   cursor: pointer;
   transition:
     color 0.25s,
@@ -1053,9 +1063,9 @@ body {
     background 0.25s;
 }
 .cs-back-btn:hover {
-  color: rgba(200, 240, 210, 0.95);
-  border-color: rgba(100, 180, 120, 0.55);
-  background: rgba(10, 35, 18, 0.85);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(168, 172, 180, 0.55);
+  background: rgba(26, 26, 29, 0.85);
 }
 
 @media (max-width: 768px) {
@@ -1066,7 +1076,7 @@ body {
 /* ── Design Frames Showcase ────────────────────────────────── */
 .cs-frames {
   padding: 3.5rem 6vw 4rem;
-  border-bottom: 1px solid rgba(80, 160, 90, 0.08);
+  border-bottom: 1px solid rgba(168, 172, 180, 0.08);
 }
 
 .cs-frames-hd {
@@ -1078,7 +1088,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   margin-bottom: 0.7rem;
 }
 
@@ -1086,7 +1096,7 @@ body {
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8f2ec;
+  color: #e8e8ea;
   margin: 0 0 0.9rem;
   line-height: 1.15;
 }
@@ -1094,7 +1104,7 @@ body {
 .cs-frames-sub {
   font-size: 0.82rem;
   line-height: 1.75;
-  color: rgba(180, 220, 190, 0.45);
+  color: rgba(210, 213, 218, 0.45);
   max-width: 520px;
   margin: 0;
 }
@@ -1125,14 +1135,14 @@ body {
 .cs-frame-img-wrap {
   border-radius: 10px;
   overflow: hidden;
-  background: #080e09;
+  background: #0d0d0e;
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition:
     border-color 0.25s,
     box-shadow 0.25s;
 }
 .cs-frame-card:hover .cs-frame-img-wrap {
-  border-color: rgba(74, 154, 100, 0.3);
+  border-color: rgba(168, 172, 180, 0.3);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
@@ -1167,7 +1177,7 @@ body {
 .cs-frame-num {
   font-size: 0.55rem;
   letter-spacing: 0.18em;
-  color: #4a9a64;
+  color: #a8acb4;
   opacity: 0.7;
   margin-top: 2px;
   flex-shrink: 0;
@@ -1176,14 +1186,14 @@ body {
 .cs-frame-label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(230, 240, 235, 0.85);
+  color: rgba(232, 232, 234, 0.85);
   margin: 0 0 3px;
   letter-spacing: 0.01em;
 }
 
 .cs-frame-desc {
   font-size: 0.62rem;
-  color: rgba(180, 220, 190, 0.4);
+  color: rgba(210, 213, 218, 0.4);
   margin: 0;
   line-height: 1.55;
 }
@@ -1230,7 +1240,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgba(4, 12, 7, 0.9);
+  background: rgba(8, 8, 9, 0.9);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   display: flex;
@@ -1276,20 +1286,20 @@ body {
 .cs-lb-num {
   font-size: 0.55rem;
   letter-spacing: 0.2em;
-  color: #4a9a64;
+  color: #a8acb4;
   opacity: 0.7;
 }
 
 .cs-lb-label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(230, 240, 235, 0.85);
+  color: rgba(232, 232, 234, 0.85);
   letter-spacing: 0.01em;
 }
 
 .cs-lb-desc {
   font-size: 0.62rem;
-  color: rgba(180, 220, 190, 0.4);
+  color: rgba(210, 213, 218, 0.4);
 }
 
 .cs-lb-close {
@@ -1598,7 +1608,7 @@ body {
 
 .mk-search-input {
   background: none;
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   border: none;
   outline: none;
   color: rgba(0, 0, 0, 0.5);
@@ -2071,7 +2081,7 @@ body {
 
 .fc-header {
   padding: 8rem 6vw 3.5rem;
-  border-bottom: 1px solid rgba(80, 110, 140, 0.12);
+  border-bottom: 1px solid rgba(168, 172, 180, 0.12);
 }
 
 .fc-tag {
@@ -2079,7 +2089,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #6a9ab8;
+  color: #a8acb4;
   margin-bottom: 1rem;
 }
 
@@ -2087,7 +2097,7 @@ body {
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #dde8f0;
+  color: #e8e8ea;
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
@@ -2095,7 +2105,7 @@ body {
 .fc-subtitle {
   font-size: 0.85rem;
   line-height: 1.75;
-  color: rgba(160, 200, 220, 0.5);
+  color: rgba(210, 213, 218, 0.5);
   max-width: 480px;
   margin: 0 0 0.5rem;
 }
@@ -2104,7 +2114,7 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #6a9ab8;
+  color: #a8acb4;
   opacity: 0.7;
   margin: 0;
 }
@@ -2123,7 +2133,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #6a9ab8;
+  color: #a8acb4;
   margin-bottom: 0.5rem;
 }
 
@@ -2131,7 +2141,7 @@ body {
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #dde8f0;
+  color: #e8e8ea;
   margin: 0 0 0.4rem;
   line-height: 1.15;
 }
@@ -2140,7 +2150,7 @@ body {
   font-size: 0.65rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(140, 180, 210, 0.4);
+  color: rgba(210, 213, 218, 0.4);
   margin: 0;
 }
 
@@ -2150,8 +2160,8 @@ body {
   height: clamp(340px, 56vw, 680px);
   border-radius: 12px;
   overflow: hidden;
-  background: #111010;
-  border: 1px solid rgba(100, 140, 180, 0.1);
+  background: #0d0d0e;
+  border: 1px solid rgba(168, 172, 180, 0.1);
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.5),
     inset 0 0 60px rgba(0, 0, 0, 0.3);
@@ -2176,12 +2186,12 @@ body {
 
 .fc-overlay-text {
   display: block;
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-weight: 900;
   font-size: clamp(0.75rem, 1.8vw, 1.05rem);
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #dde8f0;
+  color: #e8e8ea;
   /* 3D extrusion: stacked steel-blue shadow steps */
   text-shadow:
     0 1px 0 #b0bece,
@@ -2286,7 +2296,7 @@ body {
 }
 
 .fc-start-btn {
-  font-family: "League Spartan", sans-serif;
+  font-family: "Univers TE-20 Light", sans-serif;
   font-weight: 900;
   font-size: 0.75rem;
   letter-spacing: 0.32em;
@@ -2323,7 +2333,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #6a9ab8;
+  color: #a8acb4;
   margin-bottom: 0.7rem;
 }
 
@@ -2331,7 +2341,7 @@ body {
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #dde8f0;
+  color: #e8e8ea;
   margin: 0 0 1.5rem;
   line-height: 1.2;
 }
@@ -2339,7 +2349,7 @@ body {
 .fc-section-text {
   font-size: 0.92rem;
   line-height: 1.9;
-  color: rgba(180, 210, 225, 0.6);
+  color: rgba(210, 213, 218, 0.6);
   margin: 0 0 1.2rem;
 }
 
@@ -2387,7 +2397,7 @@ body {
 .spinner-container--fullpage {
   position: fixed;
   z-index: 9000;
-  background: #06100a;
+  background: #0a0a0b;
 }
 
 .spinner-title {
@@ -2426,8 +2436,8 @@ body {
 
 .contact-modal {
   position: relative;
-  background: #0e1318;
-  border: 1px solid rgba(100, 140, 180, 0.18);
+  background: #0d0d0f;
+  border: 1px solid rgba(168, 172, 180, 0.18);
   border-radius: 14px;
   padding: 2.8rem 2.8rem 2.4rem;
   max-width: 440px;
@@ -2443,7 +2453,7 @@ body {
   right: 1rem;
   background: none;
   border: none;
-  color: rgba(180, 210, 225, 0.45);
+  color: rgba(210, 213, 218, 0.45);
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -2456,7 +2466,7 @@ body {
   height: 18px;
 }
 .contact-close:hover {
-  color: #dde8f0;
+  color: #e8e8ea;
 }
 
 .contact-eyebrow {
@@ -2464,7 +2474,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #6a9ab8;
+  color: #a8acb4;
   margin-bottom: 0.6rem;
 }
 
@@ -2472,7 +2482,7 @@ body {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #dde8f0;
+  color: #e8e8ea;
   margin: 0 0 1.2rem;
   line-height: 1.1;
 }
@@ -2508,7 +2518,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  color: rgba(180, 210, 225, 0.45);
+  color: rgba(210, 213, 218, 0.45);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2520,15 +2530,15 @@ body {
   height: 14px;
 }
 .contact-icon-btn:hover {
-  color: #dde8f0;
+  color: #e8e8ea;
 }
 
 .contact-legal {
   font-size: 0.7rem;
   line-height: 1.7;
-  color: rgba(180, 210, 225, 0.3);
+  color: rgba(210, 213, 218, 0.3);
   margin: 0 0 1.8rem;
-  border-top: 1px solid rgba(100, 140, 180, 0.1);
+  border-top: 1px solid rgba(168, 172, 180, 0.1);
   padding-top: 1rem;
 }
 
@@ -2537,10 +2547,10 @@ body {
   align-items: center;
   gap: 0.55rem;
   background: none;
-  border: 1px solid rgba(100, 140, 180, 0.28);
+  border: 1px solid rgba(168, 172, 180, 0.28);
   border-radius: 8px;
-  color: rgba(180, 210, 225, 0.7);
-  font-family: "League Spartan", sans-serif;
+  color: rgba(210, 213, 218, 0.7);
+  font-family: "Univers TE-20 Light", sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -2557,8 +2567,8 @@ body {
   flex-shrink: 0;
 }
 .contact-send-btn:hover {
-  border-color: rgba(100, 160, 210, 0.55);
-  color: #dde8f0;
+  border-color: rgba(200, 203, 210, 0.55);
+  color: #e8e8ea;
 }
 
 /* ─── About Modal ────────────────────────────────────────────── */
@@ -2576,8 +2586,8 @@ body {
 
 .about-modal {
   position: relative;
-  background: #0a1014;
-  border: 1px solid rgba(100, 180, 120, 0.14);
+  background: #0d0d0f;
+  border: 1px solid rgba(168, 172, 180, 0.14);
   border-radius: 16px;
   padding: 2.8rem;
   max-width: 820px;
@@ -2595,7 +2605,7 @@ body {
   right: 1.1rem;
   background: none;
   border: none;
-  color: rgba(160, 210, 175, 0.35);
+  color: rgba(210, 213, 218, 0.35);
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -2609,7 +2619,7 @@ body {
   height: 18px;
 }
 .about-close:hover {
-  color: rgba(200, 240, 210, 0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Side-by-side on desktop, stacked on mobile */
@@ -2632,7 +2642,7 @@ body {
 .about-photo-wrap {
   border-radius: 10px;
   overflow: hidden;
-  background: #111a14;
+  background: #0f0f11;
   aspect-ratio: 3 / 4;
 }
 
@@ -2652,7 +2662,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #4a9a64;
+  color: #a8acb4;
   margin-bottom: 0.7rem;
 }
 
@@ -2660,7 +2670,7 @@ body {
   font-size: clamp(1.7rem, 3.5vw, 2.4rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #ddeee4;
+  color: #e8e8ea;
   margin: 0 0 1.8rem;
   line-height: 1.15;
 }
@@ -2668,15 +2678,15 @@ body {
 .about-text {
   font-size: 0.88rem;
   line-height: 1.85;
-  color: rgba(200, 230, 210, 0.72);
+  color: rgba(216, 219, 224, 0.72);
   margin: 0 0 1.1rem;
 }
 
 .about-text--accent {
   font-size: 0.82rem;
   letter-spacing: 0.04em;
-  color: rgba(100, 200, 140, 0.6);
-  border-left: 2px solid rgba(74, 154, 100, 0.4);
+  color: rgba(210, 213, 218, 0.6);
+  border-left: 2px solid rgba(168, 172, 180, 0.4);
   padding-left: 0.9rem;
   margin-top: 1.6rem;
   font-style: italic;
