@@ -8,7 +8,8 @@ import App from './App.jsx'
 import ProjectPage from './components/ProjectPage.jsx'
 import VideoPhotographyPage from './components/VideoPhotographyPage.jsx'
 import MarketplaceCaseStudyPage from './components/MarketplaceCaseStudyPage.jsx'
-import FashionCampaignPage from './components/FashionCampaignPage.jsx'
+// Hidden for now — re-enable together with the route below.
+// import FashionCampaignPage from './components/FashionCampaignPage.jsx'
 import './styles/index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -18,7 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/" element={<App />} />
         <Route path="/video-photography" element={<VideoPhotographyPage />} />
         <Route path="/marketplace-case-study" element={<MarketplaceCaseStudyPage />} />
-        <Route path="/fashion-campaign" element={<FashionCampaignPage />} />
+        {/* <Route path="/fashion-campaign" element={<FashionCampaignPage />} /> */}
         <Route path="/*" element={<ProjectPage />} />
       </Routes>
     </BrowserRouter>

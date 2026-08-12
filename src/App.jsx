@@ -227,7 +227,17 @@ export default function App() {
   /* White fade on drop click → navigate to route after fade */
   useEffect(() => {
     const handleDropClick = (e) => {
-      const route = e.detail?.data?.route
+      const { route, externalUrl } = e.detail?.data ?? {}
+
+      /* External links open in a new tab — this page stays put, so skip
+         the fade and cancel the camera zoom the click just triggered. */
+      if (externalUrl) {
+        dropClickBus.active = false
+        dropClickBus.targetPos = null
+        window.open(externalUrl, "_blank", "noopener,noreferrer")
+        return
+      }
+
       setWhiteFade(true)
       if (route) {
         // Wait for the 1s fade transition to complete, then navigate

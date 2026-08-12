@@ -26,6 +26,9 @@ export const caseStudies = [
     year: "2025",
   },
   {
+    /* TEMPORARILY HIDDEN — not listed in `allDroplets` below.
+       To re-enable: put it back in allDroplets with route "/fashion-campaign"
+       and un-comment the route in main.jsx. */
     id: "cs-1",
     type: "case-study",
     tag: "Case Study",
@@ -54,6 +57,16 @@ export const caseStudies = [
       "Interactive data-journalism piece combining scrollytelling, custom WebGL visualisations, and narrative design for a newsroom.",
     link: "https://your-project-link.com",
     year: "2023",
+  },
+  {
+    id: "cs-4",
+    type: "case-study",
+    tag: "Live Demo",
+    title: "Reservation System",
+    bubbleLabel: "Reservation System",
+    description: "A booking and table-management tool — live interactive demo.",
+    link: "https://reservation-system-ten-tau.vercel.app/demo",
+    year: "2026",
   },
 ]
 
@@ -92,6 +105,12 @@ export const allDroplets = [
     route: "/video-photography",
     bubbleLabel: "Video & Photography Work",
   },
-  { ...caseStudies[1], route: "/fashion-campaign" },
+  /* Fashion Campaign (caseStudies[1], route "/fashion-campaign") is hidden
+     for now — swapped out for the Reservation System demo. */
+  {
+    ...caseStudies[4],
+    externalUrl:
+      "https://reservation-system-92matouia-manuklapfs-projects.vercel.app/demo",
+  },
   { ...caseStudies[0], route: "/marketplace-case-study" },
 ]
