@@ -109,8 +109,7 @@ export const allDroplets = [
      for now — swapped out for the Reservation System demo. */
   {
     ...caseStudies[4],
-    externalUrl:
-      "https://reservation-system-92matouia-manuklapfs-projects.vercel.app/demo",
+    externalUrl: "https://reservation-system-ten-tau.vercel.app/demo",
   },
   { ...caseStudies[0], route: "/marketplace-case-study" },
 ]
