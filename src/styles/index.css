@@ -13,6 +13,81 @@
   src: url("/UniversTE20-Thin.ttf") format("truetype");
 }
 
+/* ─── Design tokens (all colors in oklch) ──────────────────── */
+:root {
+  /* Shared dark page ground + light ink — used by the intro sequence
+     and by every case-study page.
+
+     The `*-parts` vars hold bare L C H components so the translucent
+     variants below stay locked to the solid colours they derive from:
+     retune --ink-parts and every hairline follows. */
+  --bg-parts: 0.185 0.008 264;
+  --bg: oklch(var(--bg-parts));
+  --bg-sunk: oklch(0.145 0.007 264);
+  --bg-raised-parts: 0.235 0.01 264;
+  --bg-raised: oklch(var(--bg-raised-parts));
+  --bg-light: oklch(0.4 0.01 264);
+
+  --ink-parts: 0.97 0.006 161.25;
+  --ink: oklch(var(--ink-parts));
+  --ink-body: oklch(0.885 0.012 161.25);
+  --ink-muted: oklch(0.715 0.016 161.25);
+
+  /* Light-on-dark hairlines read weaker than dark-on-light at the same
+     alpha, so these sit a touch above their light-theme counterparts. */
+  --line-soft: oklch(var(--ink-parts) / 0.14);
+  --line: oklch(var(--ink-parts) / 0.24);
+  --line-strong: oklch(var(--ink-parts) / 0.4);
+
+  /* Absolute white and black — the overlay UI on the 3D scene, the scrims
+     and shadows, and the light components that sit on the dark ground. Split
+     into `-parts` like the ink above because most uses are translucent: the
+     alpha is a per-use modifier, not a different colour, so all of them stay
+     locked to these two. */
+  --white-parts: 1 0 0;
+  --white: oklch(var(--white-parts));
+  --black-parts: 0 0 0;
+  --black: oklch(var(--black-parts));
+
+  /* Near-white with a cool cast — headings and hover states on the dark
+     modals and the fashion-campaign overlay. Deliberately not --ink: that
+     one is brighter and carries the green cast of the page type. */
+  --panel-ink: oklch(0.9316 0.0027 286.35);
+
+  /* ── Contrast pairs ──────────────────────────────────────────────
+     Every colour above paired with its complete opposite: lightness
+     mirrored (L → 1 − L) and hue rotated a half turn (H → H + 180), chroma
+     held. So --bg-contrast is what stays legible *on* --bg, --ink-contrast
+     is what stays legible on --ink, and so on down the list.
+
+     Chroma is low right across this palette, so the half-turn reads as a
+     quiet warm/cool flip — the mirrored lightness is what does the visible
+     work. Retuning a colour above means recomputing its pair here; they are
+     written out rather than derived because CSS cannot do the arithmetic. */
+  --bg-contrast-parts: 0.815 0.008 84;
+  --bg-contrast: oklch(var(--bg-contrast-parts));
+  --bg-sunk-contrast: oklch(0.855 0.007 84);
+  --bg-raised-contrast-parts: 0.765 0.009 84;
+  --bg-raised-contrast: oklch(var(--bg-raised-contrast-parts));
+
+  --ink-contrast-parts: 0.03 0.006 341.25;
+  --ink-contrast: oklch(var(--ink-contrast-parts));
+  --ink-body-contrast: oklch(0.115 0.012 341.25);
+  --ink-muted-contrast: oklch(0.285 0.016 341.25);
+
+  /* hairlines for an inverted ground, at the alphas of their originals */
+  --line-soft-contrast: oklch(var(--ink-contrast-parts) / 0.14);
+  --line-contrast: oklch(var(--ink-contrast-parts) / 0.24);
+  --line-strong-contrast: oklch(var(--ink-contrast-parts) / 0.4);
+
+  /* these two are already each other's opposite — pointed at one another so
+     the -contrast suffix works uniformly across the whole palette */
+  --white-contrast: var(--black);
+  --black-contrast: var(--white);
+
+  --panel-ink-contrast: oklch(0.0684 0.0027 106.35);
+}
+
 /* ─── Reset & Base ─────────────────────────────────────────── */
 *,
 *::before,
@@ -25,13 +100,16 @@
 
 html {
   scroll-behavior: auto; /* let JS handle scroll smoothing */
+  /* keeps scrollbars and the overscroll ground dark, not white */
+  color-scheme: dark;
+  background: var(--bg);
 }
 
 body {
-  background: #c2dff0;
+  background: var(--bg);
   overflow-x: hidden;
   font-family: "Univers TE-20 Light", sans-serif;
-  color: #2a4a3a;
+  color: var(--ink-body);
 }
 
 /* ─── Layout ────────────────────────────────────────────────── */
@@ -55,6 +133,94 @@ body {
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   outline: none;
+  /* Hidden behind the intro card, then faded up as it clears */
+  opacity: 0;
+  transition: opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.canvas-container.revealed {
+  opacity: 1;
+}
+
+/* ─── Intro Sequence ─────────────────────────────────────────── */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+  will-change: opacity;
+}
+
+.intro-type {
+  text-align: center;
+  padding: 0 6vw;
+  max-width: 90vw;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.intro-line {
+  margin: 0;
+  font-family: "Univers TE-20 Light", sans-serif;
+  font-weight: 500;
+  /* Both lines share one size and colour — the longer second line sets
+     the ceiling, so it never has to wrap. */
+  font-size: clamp(1.75rem, 7vw, 7rem);
+  color: var(--ink);
+  line-height: 1.08;
+}
+
+.intro-line--two {
+  margin-top: clamp(0.35rem, 0.9vw, 0.7rem);
+  opacity: 0;
+}
+
+/* Kept inline-block so the click animation can scale it on its own */
+.intro-click-word {
+  display: inline-block;
+  color: var(--ink);
+  transform-origin: 50% 60%;
+}
+
+/* ── Pointer + click ────────────────────────────────────────── */
+.intro-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  /* the svg's tip is its top-left corner, so no centring offset */
+  transform-origin: 12% 8%;
+  /* a real shadow, not tinted with the ink — the ink is light now */
+  filter: drop-shadow(0 4px 8px oklch(var(--black-parts) / 0.45));
+}
+
+.intro-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .intro-ripple {
+    width: 84px;
+    height: 84px;
+    margin: -42px 0 0 -42px;
+  }
 }
 
 /* ─── UI Overlay ─────────────────────────────────────────────── */
@@ -84,7 +250,7 @@ body {
   box-sizing: border-box;
   /* mix-blend-mode keeps text punching through any background */
   mix-blend-mode: difference;
-  color: #ffffff;
+  color: var(--white);
 }
 
 .godspeed-logo {
@@ -115,12 +281,18 @@ body {
 .nav-links .nav-contact-btn {
   text-decoration: none;
   font-family: "Univers TE-20 Light", sans-serif;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  /* inherit the navbar's white so the difference blend inverts it against
+     whatever is behind — black here would blend to nothing */
   color: inherit;
   transition: opacity 0.2s;
   font-variant-numeric: tabular-nums;
+}
+
+.nav-links a:hover,
+.nav-links .nav-contact-btn:hover {
+  opacity: 0.65;
 }
 
 .nav-contact-icon {
@@ -265,7 +437,7 @@ body {
   font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1rem;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--white);
   text-align: right;
   white-space: nowrap;
   max-width: 250px;
@@ -292,15 +464,15 @@ body {
 .section-label h2 {
   font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 0 16px rgba(200, 204, 212, 0.55);
+  color: oklch(var(--white-parts) / 0.95);
+  text-shadow: 0 0 16px oklch(0.8445 0.0119 264.5 / 0.55);
   letter-spacing: 0.08em;
 }
 
 .section-label p {
   margin-top: 0.3rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: oklch(var(--white-parts) / 0.6);
   letter-spacing: 0.1em;
 }
 
@@ -327,27 +499,30 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 0 8px rgba(200, 204, 212, 0.4);
+  color: oklch(var(--white-parts) / 0.7);
+  text-shadow: 0 0 8px oklch(0.8445 0.0119 264.5 / 0.4);
 }
 
 .scroll-arrow {
   width: 24px;
   height: 24px;
-  border-right: 2px solid rgba(255, 255, 255, 0.6);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+  border-right: 2px solid oklch(var(--white-parts) / 0.6);
+  border-bottom: 2px solid oklch(var(--white-parts) / 0.6);
   animation: arrowBounce 1.8s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(200, 204, 212, 0.5));
+  filter: drop-shadow(0 0 4px oklch(0.8445 0.0119 264.5 / 0.5));
 }
 
+/* Points down — travel through the beanstalk is a downward scroll.
+   The translate runs in the rotated frame, so equal x/y reads as straight
+   down on screen. */
 @keyframes arrowBounce {
   0%,
   100% {
-    transform: rotate(-135deg) translateY(-15px) translateX(-15px);
+    transform: rotate(45deg) translateY(9px) translateX(9px);
     opacity: 0.4;
   }
   50% {
-    transform: rotate(-135deg) translateY(-9px) translateX(-9px);
+    transform: rotate(45deg) translateY(15px) translateX(15px);
     opacity: 1;
   }
 }
@@ -370,7 +545,7 @@ body {
     border-radius: 50%;
     background: transparent;
     border: none;
-    color: rgb(255, 255, 255);
+    color: var(--white);
     cursor: pointer;
     pointer-events: all;
     z-index: 20;
@@ -385,7 +560,7 @@ body {
   .mobile-drop-arrow svg {
     width: 4rem;
     height: 4rem;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 2px 6px oklch(var(--black-parts) / 0.1));
   }
 
   .mobile-drop-arrow--up {
@@ -404,16 +579,16 @@ body {
 
 /* ─── Droplet Info Card (rendered via Html / portal) ─────────── */
 .droplet-card {
-  background: rgba(220, 245, 235, 0.92);
+  background: oklch(0.9491 0.0294 169.71 / 0.92);
   backdrop-filter: blur(3px);
-  border: 1px solid rgba(168, 230, 200, 0.5);
+  border: 1px solid oklch(0.8747 0.0755 163.42 / 0.5);
   border-radius: 16px;
   padding: 1.4rem 1.6rem;
   min-width: 220px;
   max-width: 280px;
   box-shadow:
-    0 4px 24px rgba(80, 180, 140, 0.2),
-    0 0 40px rgba(168, 230, 200, 0.15);
+    0 4px 24px oklch(0.6992 0.1118 164.45 / 0.2),
+    0 0 40px oklch(0.8747 0.0755 163.42 / 0.15);
   pointer-events: all;
   cursor: pointer;
   transform-origin: center bottom;
@@ -436,14 +611,14 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #5aad75;
+  color: oklch(0.6802 0.1166 152.72);
   margin-bottom: 0.5rem;
 }
 
 .droplet-card h3 {
   font-family: "Univers TE-20 Light", sans-serif;
   font-size: 1rem;
-  color: #1a3a2a;
+  color: oklch(0.3186 0.048 160.15);
   margin-bottom: 0.4rem;
   line-height: 1.3;
 }
@@ -451,7 +626,7 @@ body {
 .droplet-card p {
   font-size: 0.78rem;
   line-height: 1.6;
-  color: #3a6a4a;
+  color: oklch(0.4806 0.074 153.53);
   margin-bottom: 0.8rem;
 }
 
@@ -460,9 +635,9 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #3d8c60;
+  color: oklch(0.5783 0.104 156.5);
   text-decoration: none;
-  border-bottom: 1px solid rgba(61, 140, 96, 0.4);
+  border-bottom: 1px solid oklch(0.5783 0.104 156.5 / 0.4);
   padding-bottom: 1px;
   transition:
     color 0.2s,
@@ -470,8 +645,8 @@ body {
 }
 
 .droplet-card a:hover {
-  color: #1a5c38;
-  border-color: #1a5c38;
+  color: oklch(0.4234 0.0892 155.29);
+  border-color: oklch(0.4234 0.0892 155.29);
 }
 
 .droplet-card .close-btn {
@@ -481,7 +656,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: #5aad75;
+  color: oklch(0.6802 0.1166 152.72);
   font-size: 1rem;
   line-height: 1;
   pointer-events: all;
@@ -493,26 +668,26 @@ body {
 
 /* Reference card variant */
 .droplet-card.reference {
-  background: rgba(230, 240, 255, 0.92);
-  border-color: rgba(168, 200, 240, 0.5);
+  background: oklch(0.9521 0.0229 258.36 / 0.92);
+  border-color: oklch(0.823 0.0663 254.19 / 0.5);
 }
 
 .droplet-card.reference .card-tag {
-  color: #5a7aad;
+  color: oklch(0.5767 0.0874 259.46);
 }
 
 .droplet-card.reference h3 {
-  color: #1a2a4a;
+  color: oklch(0.2888 0.0627 262.97);
 }
 
 .droplet-card.reference p {
   font-style: italic;
-  color: #3a4a6a;
+  color: oklch(0.4098 0.0578 263.62);
 }
 
 .droplet-card.reference .card-role {
   font-size: 0.7rem;
-  color: #5a7aad;
+  color: oklch(0.5767 0.0874 259.46);
   margin-top: -0.2rem;
   margin-bottom: 0.6rem;
   font-style: normal;
@@ -520,8 +695,8 @@ body {
 
 /* ─── Hover Speech Bubble ───────────────────────────────────── */
 .speech-bubble {
-  background: #ffffff;
-  /* border: 2px solid #000000; */
+  background: var(--white);
+  /* border: 2px solid var(--black); */
   border-radius: 10px;
   padding: 0.45rem 0.8rem;
   min-width: 110px;
@@ -531,7 +706,7 @@ body {
   pointer-events: none;
   white-space: normal;
   animation: bubblePop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 3px 12px oklch(var(--black-parts) / 0.12);
 }
 
 /* White fill tail */
@@ -543,7 +718,7 @@ body {
   transform: translateX(-50%);
   border-width: 8px 6px 0 6px;
   border-style: solid;
-  border-color: #fff transparent transparent transparent;
+  border-color: var(--white) transparent transparent transparent;
 }
 
 @keyframes bubblePop {
@@ -562,7 +737,7 @@ body {
   font-size: 0.52rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #666666;
+  color: oklch(0.5103 0 0);
   margin-bottom: 0.2rem;
 }
 
@@ -571,7 +746,7 @@ body {
   font-family: "Univers TE-20 Light", sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #111111;
+  color: oklch(0.1776 0 0);
   line-height: 1.35;
 }
 
@@ -579,7 +754,7 @@ body {
   display: block;
   font-size: 0.5rem;
   letter-spacing: 0.18em;
-  color: #888888;
+  color: oklch(0.6268 0 0);
   margin-top: 0.25rem;
 }
 
@@ -588,7 +763,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 900;
-  background: #ffffff;
+  background: var(--bg);
   opacity: 0;
   pointer-events: none;
   transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
@@ -624,7 +799,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 900;
-  background: #ffffff;
+  background: var(--bg);
   opacity: 1;
   pointer-events: none;
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
@@ -638,14 +813,116 @@ body {
 .beanstalk-page {
   position: relative;
   min-height: 100vh;
-  background: #0a0a0b;
-  color: #e8e8ea;
+  background: var(--bg);
+  color: var(--ink);
   opacity: 0;
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
 }
 
 .beanstalk-page.visible {
   opacity: 1;
+}
+
+/* ─── Case-study card system ─────────────────────────────────
+   Every section of a case study is one big white card sitting on the page
+   ground, laid out on a single-column grid. Cards carry radius only — no
+   border, no shadow — so the ground behind them does the separating. */
+.beanstalk-page {
+  --card: var(--bg-raised);
+  --card-radius: clamp(1.25rem, 2vw, 1.75rem);
+  --card-pad: clamp(1.5rem, 3vw, 2.75rem);
+
+  /* Nothing in a case study is set below 1rem. Uppercase labels trade
+     their wide tracking for the extra size so they still read as labels. */
+  --fs-eyebrow: 1rem;
+  --fs-meta: 1rem;
+  --fs-body: 1.0625rem;
+  --fs-h2: clamp(1.5rem, 2.6vw, 2rem);
+  --fs-h1: clamp(2rem, 4.2vw, 3.25rem);
+  --tracking-label: 0.14em;
+}
+
+/* The grid every page lays its cards on */
+.cs-page,
+.fc-page,
+.project-page {
+  /* Block flow, not grid: a grid item's sticky containing block is its own
+     row, which leaves it no room to travel. In normal flow the containing
+     block is this whole column, which is what lets the cards stack. */
+  --card-gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  /* where a card comes to rest, clear of the fixed navbar */
+  --stack-top: clamp(4.75rem, 6vh, 5.5rem);
+
+  /* wide, but still short of the viewport so the column reads as centred */
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: clamp(5.5rem, 8vw, 7rem) clamp(0.75rem, 2vw, 1.75rem)
+    clamp(5rem, 8vw, 7rem);
+}
+
+.cs-page > * + *,
+.fc-page > * + *,
+.project-page > * + * {
+  margin-top: var(--card-gap);
+}
+
+/* ── Stacked cards ───────────────────────────────────────────
+   Each card sticks below the navbar and the next one scrolls up over it.
+   Later siblings paint above earlier ones by default, so the incoming card
+   occludes the one it is covering with no z-index bookkeeping. The fade of
+   the card underneath is driven from useCardStack, which reads back exactly
+   this list — whatever computes to `sticky` here is what stacks. */
+.cs-page > .mk-section,
+.cs-page > .js-section {
+  position: sticky;
+  top: var(--stack-top);
+}
+
+/* Set by useCardStack on any card too tall to fit between the rest line and
+   the bottom of the screen. Pinned, such a card would hold its head in place
+   with its tail below the fold and then be covered by the next one, so the
+   reader could never reach its end — most often on phones and tablets, where
+   the same card is far taller relative to the viewport. Must follow the rule
+   above: same specificity, so source order is what wins. */
+.cs-page > .cs-card--tall {
+  position: static;
+}
+
+/* The last card has nothing coming over it, so it never fades; the JS leaves
+   it alone. Cards need an opaque ground to occlude with — they already have
+   one, but state it here so the effect can't be broken from a distance. */
+.cs-page > .mk-section,
+.cs-page > .js-section {
+  background: var(--card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-page > .mk-section,
+  .cs-page > .js-section {
+    position: static;
+  }
+}
+
+.mk-section,
+.fc-viewer-wrap,
+.project-card {
+  background: var(--card);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  border: none;
+  box-shadow: none;
+}
+
+/* The navbar's difference blend keeps it legible over the 3D scene, but on
+   the light case-study ground it would wash the links out — paint them with
+   the page ink instead. */
+.beanstalk-page .navbar {
+  mix-blend-mode: normal;
+  color: var(--ink);
+}
+
+.beanstalk-page .hamburger-menu .bar {
+  background-color: var(--ink);
 }
 
 /* Pill button — fixed bottom-left, glass style */
@@ -658,94 +935,100 @@ body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 1.2rem;
-  background: rgba(10, 10, 11, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(168, 172, 180, 0.22);
-  border-radius: 100px;
+  background: var(--bg);
+  border: 2px solid var(--bg-contrast);
+  border-radius: 15px;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: var(--fs-meta);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: rgba(210, 213, 218, 0.7);
+  color: var(--ink-body);
   cursor: pointer;
   transition:
     color 0.25s,
-    border-color 0.25s,
     background 0.25s;
 }
 
 .page-back-btn:hover {
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(168, 172, 180, 0.55);
-  background: rgba(26, 26, 29, 0.85);
+  color: var(--ink);
 }
 
 @media (max-width: 768px) {
+  /* The navbar already gets you home on a phone, and fixed at the bottom this
+     sat over the content it was meant to sit beside. */
   .page-back-btn {
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  .page-back-arrow {
     display: none;
   }
 }
 
 /* ─── Generic Project Page content ──────────────────────────── */
-.project-content {
-  padding: 8rem 8vw 8rem;
-  max-width: 680px;
+.project-card {
+  text-align: center;
+}
+
+/* Long-form copy stays ranged left, but the column itself shrinks to the
+   text so a one-line description doesn't hang off the card's centre. */
+.project-description {
+  text-align: left;
+  width: fit-content;
+  max-width: 62ch;
+  margin-inline: auto;
 }
 
 .project-tag {
   display: inline-block;
-  font-size: 0.65rem;
-  letter-spacing: 0.28em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 1.2rem;
 }
 
 .project-title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: var(--fs-h1);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 1.2rem;
   line-height: 1.1;
 }
 
 .project-subtitle {
-  font-size: 0.95rem;
-  color: rgba(210, 213, 218, 0.65);
+  font-size: var(--fs-body);
+  color: var(--ink-body);
   margin: 0 0 0.4rem;
 }
 
 .project-year {
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   opacity: 0.7;
   margin: 0 0 2.5rem;
 }
 
+/* Long-form copy stays ranged left, but the column shrinks to the text so a
+   one-line description doesn't hang off the centred card. */
 .project-description {
-  font-size: 1rem;
-  line-height: 1.85;
-  color: rgba(216, 219, 224, 0.75);
-  margin: 0 0 2.5rem;
+  font-size: var(--fs-body);
+  line-height: 1.8;
+  color: var(--ink-body);
+  text-align: left;
+  width: fit-content;
+  max-width: 62ch;
+  margin: 0 auto 2.5rem;
 }
 
 .project-link {
   display: inline-block;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   text-decoration: none;
-  border-bottom: 1px solid rgba(168, 172, 180, 0.5);
+  border-bottom: 1px solid var(--line);
   padding-bottom: 3px;
   transition:
     color 0.2s,
@@ -753,8 +1036,8 @@ body {
 }
 
 .project-link:hover {
-  color: #eef0f3;
-  border-color: rgba(220, 223, 228, 0.7);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 /* ─── Video & Photography Page ───────────────────────────────── */
@@ -762,33 +1045,33 @@ body {
 
 .vp-header {
   padding: 8rem 6vw 3.5rem;
-  border-bottom: 1px solid rgba(168, 172, 180, 0.1);
+  text-align: center;
 }
 
 .vp-tag {
   display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 1rem;
 }
 
 .vp-title {
-  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-size: var(--fs-h1);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
 
 .vp-subtitle {
-  font-size: 0.85rem;
-  line-height: 1.75;
-  color: rgba(210, 213, 218, 0.5);
-  max-width: 480px;
-  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--ink-body);
+  max-width: 46ch;
+  margin-inline: auto;
 }
 
 @media (max-width: 768px) {
@@ -798,6 +1081,8 @@ body {
 }
 
 /* ── Media grid ─────────────────────────────────────────────── */
+/* The one page that isn't card-based: an edge-to-edge gallery on fixed,
+   viewport-relative rows, square-cornered, straight on the page ground. */
 .vp-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -844,7 +1129,7 @@ body {
 .vp-cell {
   position: relative;
   overflow: hidden;
-  background: #0d0d0e;
+  background: var(--bg-sunk);
 }
 
 /* ── Photo cell ─────────────────────────────────────────────── */
@@ -917,26 +1202,26 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: rgba(3, 10, 5, 0.28);
+  background: oklch(0.1329 0.0198 154.78 / 0.28);
   transition: background 0.35s;
 }
 
 .mc-video:not(.playing):hover .mc-play-overlay {
-  background: rgba(3, 10, 5, 0.5);
+  background: oklch(0.1329 0.0198 154.78 / 0.5);
 }
 
 .mc-play-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.85);
+  color: oklch(var(--white-parts) / 0.85);
   transition:
     transform 0.3s,
     color 0.3s;
 }
 
 .mc-video:not(.playing):hover .mc-play-icon {
-  color: #ffffff;
+  color: var(--white);
   transform: scale(1.12);
 }
 
@@ -947,17 +1232,17 @@ body {
 }
 
 .mc-label {
-  font-size: 0.65rem;
-  letter-spacing: 0.26em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  color: oklch(var(--white-parts) / 0.85);
 }
 
 .mc-sublabel {
-  font-size: 0.55rem;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+  color: oklch(var(--white-parts) / 0.5);
   margin-top: -0.6rem;
 }
 
@@ -969,7 +1254,7 @@ body {
   height: 100%;
   border: none;
   display: block;
-  background: #000;
+  background: var(--black);
 }
 
 .mc-native-video {
@@ -1002,255 +1287,168 @@ body {
 /* ─── Marketplace Case Study ─────────────────────────────────── */
 
 .cs-page {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
 }
 
-.cs-header {
-  padding: 8rem 6vw 3rem;
-  border-bottom: 1px solid rgba(168, 172, 180, 0.12);
-  flex-shrink: 0;
+/* Page titles are deliberately not cards — they sit straight on the page
+   ground so the first section below is the first thing reading as a surface.
+   (.vp-header is not here: that page keeps its own pre-card spacing.) */
+.cs-header,
+.fc-header {
+  text-align: center;
+  padding: clamp(1rem, 2.5vw, 2.25rem) var(--card-pad)
+    clamp(0.5rem, 1.5vw, 1rem);
 }
 
 .cs-tag {
   display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 1rem;
 }
 
 .cs-title {
-  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-size: var(--fs-h1);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
 
 .cs-subtitle {
-  font-size: 0.85rem;
-  line-height: 1.75;
-  color: rgba(210, 213, 218, 0.5);
-  max-width: 480px;
-  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--ink-body);
+  max-width: 46ch;
+  margin-inline: auto;
 }
 
-.cs-back-btn {
+/* ─── Case-study call to action ──────────────────────────────────
+   The one way into the live thing, shown under the header and again in the
+   Solution beat. Solid ink on the page ground so it reads as the primary
+   action on a page that is otherwise all quiet type. */
+.cs-cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 2rem;
-  padding: 0.55rem 1.2rem;
-  background: rgba(10, 10, 11, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(168, 172, 180, 0.22);
-  border-radius: 100px;
+  gap: 0.55rem;
+  padding: 0.8rem 1.5rem;
+  border: 2px solid var(--bg);
+  border-radius: 15px;
+  background: var(--ink);
+  color: var(--bg);
   font-family: inherit;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: rgba(210, 213, 218, 0.7);
+  text-decoration: none;
   cursor: pointer;
   transition:
-    color 0.25s,
-    border-color 0.25s,
-    background 0.25s;
-}
-.cs-back-btn:hover {
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(168, 172, 180, 0.55);
-  background: rgba(26, 26, 29, 0.85);
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s;
 }
 
-@media (max-width: 768px) {
-  .cs-header {
-    padding: 5rem 6vw 3rem;
+@media (prefers-reduced-motion: reduce) {
+  .cs-cta,
+  .cs-cta-mark {
+    transition: none;
+  }
+  .cs-cta:hover {
+    transform: none;
+  }
+  .cs-cta:hover .cs-cta-mark {
+    transform: none;
   }
 }
-/* ── Design Frames Showcase ────────────────────────────────── */
-.cs-frames {
-  padding: 3.5rem 6vw 4rem;
-  border-bottom: 1px solid rgba(168, 172, 180, 0.08);
+
+/* ── Ring + hover inlay ──────────────────────────────────────────
+   Shared by the three actions on a case study: Open Prototype, Back to the
+   Garden, and the modal's close. Each ring is the contrast token of whatever
+   that button is filled with, so it reads against the button itself rather
+   than against whatever it happens to be sitting on.
+
+   On hover an inlay lifts inside the button, inset far enough that the fill
+   still shows as a band around it. `isolation: isolate` plus a negative
+   z-index puts that inlay above the button's own background but below its
+   label, so no wrapper element is needed around the text. */
+.cs-cta,
+.page-back-btn,
+.modal-close {
+  isolation: isolate;
 }
 
-.cs-frames-hd {
-  margin-bottom: 2.5rem;
-}
-
-.cs-frames-eyebrow {
-  display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: #a8acb4;
-  margin-bottom: 0.7rem;
-}
-
-.cs-frames-title {
-  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-  font-weight: 300;
-  letter-spacing: 0.02em;
-  color: #e8e8ea;
-  margin: 0 0 0.9rem;
-  line-height: 1.15;
-}
-
-.cs-frames-sub {
-  font-size: 0.82rem;
-  line-height: 1.75;
-  color: rgba(210, 213, 218, 0.45);
-  max-width: 520px;
-  margin: 0;
-}
-
-.cs-prototype-hd {
-  padding: 3.5rem 6vw 0;
-}
-
-.cs-frames-desktop {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.cs-frames-mobile {
-  display: flex;
-  gap: 14px;
-}
-
-.cs-frame-card {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.cs-frame-card:hover {
-  transform: translateY(-5px);
-}
-
-.cs-frame-img-wrap {
-  border-radius: 10px;
-  overflow: hidden;
-  background: #0d0d0e;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition:
-    border-color 0.25s,
-    box-shadow 0.25s;
-}
-.cs-frame-card:hover .cs-frame-img-wrap {
-  border-color: rgba(168, 172, 180, 0.3);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-}
-
-.cs-frame-img-wrap--desktop {
-  aspect-ratio: 16 / 9;
-}
-
-.cs-frame-img-wrap--mobile {
-  aspect-ratio: 9 / 19;
-}
-
-.cs-frame-card--mobile {
-  width: clamp(130px, 16vw, 210px);
-  flex-shrink: 0;
-}
-
-.cs-frame-img-wrap img {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-  display: block;
-}
-
-.cs-frame-meta {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0 0;
-}
-
-.cs-frame-num {
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
-  color: #a8acb4;
-  opacity: 0.7;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.cs-frame-label {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: rgba(232, 232, 234, 0.85);
-  margin: 0 0 3px;
-  letter-spacing: 0.01em;
-}
-
-.cs-frame-desc {
-  font-size: 0.62rem;
-  color: rgba(210, 213, 218, 0.4);
-  margin: 0;
-  line-height: 1.55;
-}
-
-/* ── Frame hover hint ──────────────────────────────────────────── */
-.cs-frame-img-wrap {
+.cs-cta {
   position: relative;
-  cursor: pointer;
 }
-.cs-frame-hover-hint {
+
+.cs-cta::before,
+.page-back-btn::before,
+.modal-close::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.45);
+  inset: 3px;
+  z-index: -1;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.2s;
-  border-radius: inherit;
 }
-.cs-frame-card:hover .cs-frame-hover-hint {
+
+.cs-cta::before {
+  background: var(--ink-muted);
+}
+
+.page-back-btn::before,
+.modal-close::before {
+  background: var(--bg-light);
+}
+
+/* inset 3px inside a padding box already 2px in from a 15px corner */
+.cs-cta::before,
+.page-back-btn::before {
+  border-radius: 9px;
+}
+
+.modal-close::before {
+  border-radius: 50%;
+}
+
+.cs-cta:hover::before,
+.page-back-btn:hover::before,
+.modal-close:hover::before {
   opacity: 1;
 }
 
-@media (max-width: 768px) {
-  .cs-frame-card:hover {
-    transform: none;
-  }
-  .cs-frame-card:hover .cs-frame-img-wrap {
-    border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: none;
-  }
-  .cs-frame-card:hover .cs-frame-hover-hint {
-    opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .cs-cta::before,
+  .page-back-btn::before,
+  .modal-close::before {
+    transition: none;
   }
 }
 
-/* ── Lightbox ──────────────────────────────────────────────────── */
-.cs-lb-backdrop {
+.cs-header-cta {
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/* ─── Prototype modal ────────────────────────────────────────────
+   A panel over the page, not a takeover — the case study stays visible
+   around it. Backdrop click or Escape closes. */
+.cs-stage {
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgba(8, 8, 9, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 24px;
-  animation: lb-in 0.22s cubic-bezier(0.34, 1.2, 0.64, 1);
+  padding: clamp(1rem, 4vw, 2.5rem);
+  background: oklch(var(--black-parts) / 0.6);
+  backdrop-filter: blur(4px);
+  animation: csStageIn 0.2s ease both;
 }
-@keyframes lb-in {
+
+@keyframes csStageIn {
   from {
     opacity: 0;
   }
@@ -1259,92 +1457,300 @@ body {
   }
 }
 
-.cs-lb-content {
+.cs-stage-modal {
+  position: relative;
+  width: min(100%, 1100px);
+  max-height: 100%;
+  overflow: auto;
+  background: var(--card);
+  animation: csModalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes csModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Shared by every backdrop that opens over the page — the prototype stage,
+   the contact modal, the about modal. It is a child of the backdrop, not of
+   the panel, and each of those backdrops is fixed at inset 0, so this lands
+   in the viewport's corner regardless of the panel's own size or padding. */
+.modal-close {
+  position: absolute;
+  top: clamp(1rem, 2.5vw, 2rem);
+  right: clamp(1rem, 2.5vw, 2rem);
+  z-index: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--black-contrast);
+  border-radius: 50%;
+  background: oklch(var(--black-parts) / 0.45);
+  color: var(--white);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: oklch(var(--black-parts) / 0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-stage,
+  .cs-stage-modal {
+    animation: none;
+  }
+}
+
+.cs-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 2rem;
+  padding: 0.55rem 1.2rem;
+  background: var(--bg-sunk);
+  border: none;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-body);
+  cursor: pointer;
+  transition:
+    color 0.25s,
+    background 0.25s;
+}
+.cs-back-btn:hover {
+  color: var(--ink);
+  background: var(--bg-raised);
+}
+
+@media (max-width: 768px) {
+  .cs-header {
+    padding: 5rem 6vw 3rem;
+  }
+}
+/* ─── Case-study journey (Idea / Problem / Research / Solution) ──
+   One card per beat. The head is a numbered step; the body is a two-column
+   grid of copy and imagery that collapses to one column when the card gets
+   narrow — driven by the card's own width, not the viewport, so it holds up
+   wherever a section is placed. */
+.js-section {
+  background: var(--card);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  container-type: inline-size;
+}
+
+.js-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.js-step {
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.js-title {
+  font-size: var(--fs-h2);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.js-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.25rem, 2.5vw, 2.25rem);
+  align-items: start;
+}
+
+@container (min-width: 780px) {
+  .js-body {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+}
+
+/* A beat with no imagery would otherwise keep the two-column track and leave
+   half the card empty — collapse it and hold the copy to a readable measure.
+   The :not(:has()) selector outranks the container query's plain .js-body, so
+   this wins regardless of source order. */
+.js-body:not(:has(.js-media)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.js-body:not(:has(.js-media)) .js-copy {
+  max-width: 68ch;
+  margin-inline: auto;
+}
+
+.js-lead {
+  font-size: var(--fs-body);
+  line-height: 1.75;
+  color: var(--ink-body);
+  margin: 0;
+}
+
+.js-points {
+  list-style: none;
+  margin: clamp(1rem, 2vw, 1.5rem) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.js-points li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: var(--fs-meta);
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+
+.js-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--ink-muted);
+}
+
+/* A beat that is only copy and the way in — no imagery to sit beside the
+   text — reads better centred: the copy, then the button under it, the pair
+   centred in the card. The single track comes from the :not(:has()) rule
+   above, which this never contradicts. */
+.js-body--stacked {
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.js-body--stacked .js-copy {
+  max-width: 68ch;
+}
+
+/* Each point shrinks to its own text so the dash stays next to the words
+   instead of stranded at the card's edge. */
+.js-body--stacked .js-points li {
+  justify-self: center;
+  width: fit-content;
+  text-align: left;
+}
+
+/* ── Slot ────────────────────────────────────────────────────────
+   Live content a page hands the journey — here, the way into the demo. It
+   sits at the foot of the copy column, ranged with the text above it, and
+   brings no ground of its own (the step is already a card). */
+.js-slot {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+/* nothing beside the copy, so the button centres with it */
+.js-body--stacked .js-slot {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  /* On a phone the card is one column and the button is the only call to
+     action on it — centred it reads as that, rather than as one more line
+     hanging off the left edge of the copy. */
+  .js-slot {
+    justify-content: center;
+  }
+}
+
+/* ── Imagery ─────────────────────────────────────────────────── */
+.js-media {
+  display: grid;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
+@container (min-width: 560px) {
+  .js-media--split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.js-figure {
+  margin: 0;
+}
+
+/* Portrait artwork (phone screens) would otherwise run several times the
+   height of the landscape frames beside it. */
+.js-figure--narrow .js-frame {
+  max-width: clamp(150px, 22cqi, 230px);
+  margin-inline: auto;
+}
+
+.js-frame {
+  overflow: hidden;
+  border-radius: calc(var(--card-radius) * 0.55);
+  background: var(--bg-sunk);
+}
+
+.js-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Stand-in until real artwork lands — deliberately reads as empty rather
+   than pretending to be a screenshot. */
+.js-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  max-width: min(90vw, 1100px);
-  max-height: 90vh;
-}
-
-.cs-lb-img {
-  display: block;
-  max-width: 100%;
-  max-height: calc(90vh - 60px);
-  object-fit: contain;
-  border-radius: 10px;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
-}
-
-.cs-lb-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.cs-lb-num {
-  font-size: 0.55rem;
-  letter-spacing: 0.2em;
-  color: #a8acb4;
-  opacity: 0.7;
-}
-
-.cs-lb-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: rgba(232, 232, 234, 0.85);
-  letter-spacing: 0.01em;
-}
-
-.cs-lb-desc {
-  font-size: 0.62rem;
-  color: rgba(210, 213, 218, 0.4);
-}
-
-.cs-lb-close {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  transition:
-    background 0.15s,
-    color 0.15s;
-  z-index: 1000;
-}
-.cs-lb-close:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  gap: 0.6rem;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 1rem;
 }
 
-.cs-lb-arrow {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.65);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition:
-    background 0.15s,
-    color 0.15s;
+.js-placeholder-mark {
+  width: 2rem;
+  height: 2rem;
+  opacity: 0.55;
 }
-.cs-lb-arrow:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+
+.js-placeholder-label {
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.js-caption {
+  margin-top: 0.6rem;
+  font-size: var(--fs-meta);
+  line-height: 1.5;
+  color: var(--ink-muted);
 }
 
 @font-face {
@@ -1357,8 +1763,6 @@ body {
 
 /* ── Marketplace mockup section ──────────────────────────────── */
 .mk-section {
-  flex: 1;
-  padding: 2.5rem 4vw 3.5rem;
   display: flex;
   justify-content: center;
   min-height: 30rem;
@@ -1366,19 +1770,34 @@ body {
 
 /* ── Device frame ────────────────────────────────────────────── */
 .mk-device {
+  /* The mockup is a light app UI sitting on the dark page, so it carries its
+     own greyscale rather than inheriting the page ink. Scoped here because
+     every .mk-* rule below is a descendant of this frame. */
+  --mk-ink: oklch(0.2178 0 0);
+  --mk-ink-soft: oklch(0.3211 0 0);
+  --mk-ink-muted: oklch(0.6268 0 0);
+  --mk-surface: oklch(0.9612 0 0);
+
+  /* Opposites, same rule as the palette in :root. These are pure greyscale,
+     so the half-turn of hue is a no-op and only the lightness mirrors. */
+  --mk-ink-contrast: oklch(0.7822 0 0);
+  --mk-ink-soft-contrast: oklch(0.6789 0 0);
+  --mk-ink-muted-contrast: oklch(0.3732 0 0);
+  --mk-surface-contrast: oklch(0.0388 0 0);
+
   position: relative;
   width: 100%;
   max-width: 1100px;
   aspect-ratio: 16 / 9;
-  background: #ffffff;
+  background: var(--white);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: row;
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.07);
+    0 24px 80px oklch(var(--black-parts) / 0.12),
+    0 2px 8px oklch(var(--black-parts) / 0.06),
+    0 0 0 1px oklch(var(--black-parts) / 0.07);
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────── */
@@ -1396,9 +1815,9 @@ body {
 .mk-sb-inner {
   width: 168px;
   height: 100%;
-  background: #f2f2f2;
+  background: var(--mk-surface);
   border-radius: 20px;
-  box-shadow: 0 0 4px 2px rgba(91, 91, 91, 0.15);
+  box-shadow: 0 0 4px 2px oklch(0.4712 0 0 / 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1429,12 +1848,12 @@ body {
   padding: 5px 0;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   text-align: left;
   letter-spacing: 0.01em;
 }
 .mk-sb-cat-hd:hover {
-  color: #000;
+  color: var(--black);
 }
 
 .mk-sb-items {
@@ -1448,19 +1867,19 @@ body {
 
 .mk-sb-items li {
   font-size: 0.66rem;
-  color: #444;
+  color: oklch(0.3867 0 0);
   padding: 3px 4px;
   cursor: pointer;
   border-radius: 4px;
   transition: background 0.15s;
 }
 .mk-sb-items li:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: oklch(var(--black-parts) / 0.06);
 }
 
 .mk-sb-footer {
   padding: 10px 16px 14px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid oklch(var(--black-parts) / 0.08);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1473,12 +1892,12 @@ body {
 
 .mk-sb-footer-row span {
   font-size: 0.6rem;
-  color: #888;
+  color: var(--mk-ink-muted);
   cursor: pointer;
   transition: color 0.15s;
 }
 .mk-sb-footer-row span:hover {
-  color: #333;
+  color: var(--mk-ink-soft);
 }
 
 .mk-sb-cart {
@@ -1490,7 +1909,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   padding: 0;
   margin-top: 4px;
 }
@@ -1523,7 +1942,7 @@ body {
 .mk-cell {
   aspect-ratio: 1;
   overflow: hidden;
-  background: #e0e0e0;
+  background: oklch(0.9067 0 0);
 }
 
 .mk-cell img {
@@ -1544,7 +1963,7 @@ body {
   left: 14px;
   right: 14px;
   height: 44px;
-  background: rgba(0, 0, 0, 0.5);
+  background: oklch(var(--black-parts) / 0.5);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   border-radius: 100px;
@@ -1553,7 +1972,7 @@ body {
   padding: 0 8px;
   gap: 4px;
   z-index: 20;
-  color: rgba(255, 255, 255, 0.9);
+  color: oklch(var(--white-parts) / 0.9);
 }
 
 .mk-brand {
@@ -1562,7 +1981,7 @@ body {
   transform: translateX(-50%);
   font-size: 1.25rem;
   letter-spacing: 0.24em;
-  color: #ffffff;
+  color: var(--white);
   font-family: "PicNic", Georgia, "Times New Roman", serif;
   pointer-events: none;
   white-space: nowrap;
@@ -1583,27 +2002,27 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.9);
+  color: oklch(var(--white-parts) / 0.9);
   padding: 0;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.15s;
 }
 .mk-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: oklch(var(--white-parts) / 0.12);
 }
 
 .mk-search-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.9);
+  background: oklch(var(--white-parts) / 0.9);
   border-radius: 100px;
   padding: 6px 12px;
-  color: rgba(0, 0, 0, 0.5);
+  color: oklch(var(--black-parts) / 0.5);
 }
 .mk-search-bar:hover {
-  background: rgba(255, 255, 255, 1);
+  background: var(--white);
 }
 
 .mk-search-input {
@@ -1611,7 +2030,7 @@ body {
   font-family: "Univers TE-20 Light", sans-serif;
   border: none;
   outline: none;
-  color: rgba(0, 0, 0, 0.5);
+  color: oklch(var(--black-parts) / 0.5);
   font-size: 0.72rem;
   width: 90px;
   cursor: text;
@@ -1644,16 +2063,16 @@ body {
   width: 88px;
   height: 44px;
   border-radius: 25px;
-  background: rgba(0, 0, 0, 0.5);
+  background: oklch(var(--black-parts) / 0.5);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.9);
+  color: oklch(var(--white-parts) / 0.9);
   transition: background 0.15s;
 }
 .mk-cart-btn:hover {
-  background: rgba(0, 0, 0, 0.72);
+  background: oklch(var(--black-parts) / 0.72);
 }
 
 .mk-zoom-pill {
@@ -1662,11 +2081,11 @@ body {
   gap: 10px;
   height: 44px;
   padding: 0 16px;
-  background: rgba(0, 0, 0, 0.5);
+  background: oklch(var(--black-parts) / 0.5);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   border-radius: 100px;
-  color: rgba(255, 255, 255, 0.9);
+  color: oklch(var(--white-parts) / 0.9);
 }
 
 /* ── Range slider ────────────────────────────────────────────── */
@@ -1675,7 +2094,7 @@ body {
   appearance: none;
   width: 130px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.9);
+  background: oklch(var(--white-parts) / 0.9);
   border-radius: 100px;
   outline: none;
   cursor: pointer;
@@ -1685,18 +2104,18 @@ body {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--white);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px oklch(var(--black-parts) / 0.4);
 }
 .mk-range::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border: none;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--white);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px oklch(var(--black-parts) / 0.4);
 }
 
 /* ── Overlay backdrop ───────────────────────────────────────── */
@@ -1743,11 +2162,11 @@ body {
   width: 200px;
   max-height: 340px;
   position: relative;
-  background: #f2f2f2;
+  background: var(--mk-surface);
   border-radius: 16px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+    0 8px 32px oklch(var(--black-parts) / 0.18),
+    0 0 0 1px oklch(var(--black-parts) / 0.05);
   display: flex;
   flex-direction: column;
   padding: 14px 16px 16px;
@@ -1778,7 +2197,7 @@ body {
   height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-bottom: 7px solid #f2f2f2;
+  border-bottom: 7px solid var(--mk-surface);
 }
 
 /* Cart tail — points down toward cart button (~44px center from overlay left) */
@@ -1791,7 +2210,7 @@ body {
   height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-top: 7px solid #f2f2f2;
+  border-top: 7px solid var(--mk-surface);
 }
 
 .mk-ov-header {
@@ -1804,7 +2223,7 @@ body {
 .mk-ov-title {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   letter-spacing: 0.02em;
 }
 
@@ -1813,13 +2232,13 @@ body {
   border: none;
   cursor: pointer;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--mk-ink-muted);
   padding: 2px 4px;
   line-height: 1;
   transition: color 0.15s;
 }
 .mk-ov-close:hover {
-  color: #111;
+  color: oklch(0.1776 0 0);
 }
 
 .mk-ov-section {
@@ -1833,7 +2252,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #999;
+  color: oklch(0.683 0 0);
   margin: 0;
 }
 
@@ -1846,10 +2265,10 @@ body {
 .mk-chip {
   padding: 4px 10px;
   border-radius: 100px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  background: #fff;
+  border: 1px solid oklch(var(--black-parts) / 0.14);
+  background: var(--white);
   font-size: 0.62rem;
-  color: #333;
+  color: var(--mk-ink-soft);
   cursor: pointer;
   transition:
     background 0.15s,
@@ -1858,9 +2277,9 @@ body {
   white-space: nowrap;
 }
 .mk-chip:hover {
-  background: #1a1a1a;
-  color: #fff;
-  border-color: #1a1a1a;
+  background: var(--mk-ink);
+  color: var(--white);
+  border-color: var(--mk-ink);
 }
 
 .mk-ov-price-row {
@@ -1871,7 +2290,7 @@ body {
 
 .mk-ov-price-val {
   font-size: 0.6rem;
-  color: #666;
+  color: oklch(0.5103 0 0);
   white-space: nowrap;
 }
 
@@ -1880,7 +2299,7 @@ body {
   -webkit-appearance: none;
   appearance: none;
   height: 2px;
-  background: rgba(0, 0, 0, 0.2);
+  background: oklch(var(--black-parts) / 0.2);
   border-radius: 100px;
   outline: none;
   cursor: pointer;
@@ -1890,7 +2309,7 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #1a1a1a;
+  background: var(--mk-ink);
   cursor: pointer;
 }
 
@@ -1900,8 +2319,8 @@ body {
   width: 100%;
   padding: 9px 0;
   border-radius: 100px;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--mk-ink);
+  color: var(--white);
   border: none;
   cursor: pointer;
   font-size: 0.68rem;
@@ -1909,7 +2328,7 @@ body {
   transition: background 0.15s;
 }
 .mk-ov-apply:hover {
-  background: #333;
+  background: var(--mk-ink-soft);
 }
 
 /* ── Cart overlay items ──────────────────────────────────────── */
@@ -1939,7 +2358,7 @@ body {
 .mk-cart-name {
   font-size: 0.65rem;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1947,13 +2366,13 @@ body {
 
 .mk-cart-meta {
   font-size: 0.58rem;
-  color: #888;
+  color: var(--mk-ink-muted);
 }
 
 .mk-cart-price {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   flex-shrink: 0;
 }
 
@@ -1962,34 +2381,25 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 10px 0 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid oklch(var(--black-parts) / 0.08);
   font-size: 0.68rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--mk-ink);
   flex-shrink: 0;
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .cs-stage-modal {
+    height: 80vh;
+  }
+
   .mk-section {
     padding: 1.5rem 0.5rem 0.5rem;
   }
-  .cs-frames {
-    padding: 2.5rem 5vw 3rem;
-  }
-  .cs-frames-desktop {
-    grid-template-columns: 1fr;
-  }
-  .cs-frames-mobile {
-    gap: 10px;
-  }
-  .cs-frame-card--mobile {
-    flex: 1;
-    width: auto;
-    min-width: 0;
-  }
   .mk-device {
-    aspect-ratio: 3 / 4;
+    width: 100%;
+    height: 100%;
   }
   .mk-nav {
     top: 10px;
@@ -2018,7 +2428,7 @@ body {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
+    background: oklch(var(--black-parts) / 0.5);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
   }
@@ -2032,7 +2442,7 @@ body {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
+    background: oklch(var(--black-parts) / 0.5);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
   }
@@ -2048,10 +2458,10 @@ body {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
+    background: oklch(var(--white-parts) / 0.9);
     border: none;
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.6);
+    color: oklch(var(--black-parts) / 0.6);
     flex-shrink: 0;
   }
 
@@ -2074,54 +2484,47 @@ body {
 /* ─── Fashion Campaign Page ──────────────────────────────────── */
 
 .fc-page {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-}
-
-.fc-header {
-  padding: 8rem 6vw 3.5rem;
-  border-bottom: 1px solid rgba(168, 172, 180, 0.12);
 }
 
 .fc-tag {
   display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 1rem;
 }
 
 .fc-title {
-  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-size: var(--fs-h1);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 1.2rem;
   line-height: 1.05;
 }
 
 .fc-subtitle {
-  font-size: 0.85rem;
-  line-height: 1.75;
-  color: rgba(210, 213, 218, 0.5);
-  max-width: 480px;
-  margin: 0 0 0.5rem;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--ink-body);
+  max-width: 46ch;
+  margin: 0 auto 0.5rem;
 }
 
 .fc-year {
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   opacity: 0.7;
   margin: 0;
 }
 
 /* ── 3D Viewer ───────────────────────────────────────────────── */
 .fc-viewer-wrap {
-  padding: 3rem 6vw;
+  border: none;
 }
 
 .fc-viewer-label {
@@ -2130,27 +2533,27 @@ body {
 
 .fc-viewer-eyebrow {
   display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 0.5rem;
 }
 
 .fc-viewer-title {
-  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-size: var(--fs-h2);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 0.4rem;
   line-height: 1.15;
 }
 
 .fc-viewer-desc {
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: rgba(210, 213, 218, 0.4);
+  color: var(--ink-muted);
   margin: 0;
 }
 
@@ -2160,11 +2563,11 @@ body {
   height: clamp(340px, 56vw, 680px);
   border-radius: 12px;
   overflow: hidden;
-  background: #0d0d0e;
-  border: 1px solid rgba(168, 172, 180, 0.1);
+  background: oklch(0.1595 0.0021 286.16);
+  border: 1px solid oklch(0.7437 0.0123 264.49 / 0.1);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.5),
-    inset 0 0 60px rgba(0, 0, 0, 0.3);
+    0 24px 80px oklch(var(--black-parts) / 0.5),
+    inset 0 0 60px oklch(var(--black-parts) / 0.3);
 }
 
 /* ── Canvas overlay (3D arcade prompt) ───────────────────────── */
@@ -2191,17 +2594,17 @@ body {
   font-size: clamp(0.75rem, 1.8vw, 1.05rem);
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #e8e8ea;
+  color: var(--panel-ink);
   /* 3D extrusion: stacked steel-blue shadow steps */
   text-shadow:
-    0 1px 0 #b0bece,
-    0 2px 0 #7e909e,
-    0 3px 0 #556070,
-    0 4px 0 #333e48,
-    0 5px 10px rgba(0, 0, 0, 0.95),
+    0 1px 0 oklch(0.7957 0.0275 251.71),
+    0 2px 0 oklch(0.6438 0.0295 241.41),
+    0 3px 0 oklch(0.4856 0.0292 257.68),
+    0 4px 0 oklch(0.358 0.0227 245.93),
+    0 5px 10px oklch(var(--black-parts) / 0.95),
     /* arcade lights glow — cyan + pink matching the scene */ 0 0 18px
-      rgba(68, 204, 255, 0.4),
-    0 0 50px rgba(255, 68, 204, 0.18);
+      oklch(0.7937 0.1346 227.66 / 0.4),
+    0 0 50px oklch(0.7015 0.2557 341.31 / 0.18);
   transition:
     text-shadow 0.25s ease,
     color 0.25s ease;
@@ -2222,15 +2625,15 @@ body {
 }
 
 .fc-canvas-overlay--clickable:hover .fc-overlay-text {
-  color: #ffffff;
+  color: var(--white);
   text-shadow:
-    0 1px 0 #c8d8e8,
-    0 2px 0 #98a8ba,
-    0 3px 0 #6a7a88,
-    0 4px 0 #404e58,
-    0 5px 10px rgba(0, 0, 0, 0.95),
-    0 0 24px rgba(68, 204, 255, 0.7),
-    0 0 60px rgba(255, 68, 204, 0.35);
+    0 1px 0 oklch(0.8751 0.0281 248.15),
+    0 2px 0 oklch(0.725 0.0318 251.37),
+    0 3px 0 oklch(0.5714 0.0288 244.72),
+    0 4px 0 oklch(0.4157 0.0244 239.27),
+    0 5px 10px oklch(var(--black-parts) / 0.95),
+    0 0 24px oklch(0.7937 0.1346 227.66 / 0.7),
+    0 0 60px oklch(0.7015 0.2557 341.31 / 0.35);
 }
 
 .fc-canvas-overlay--clickable:active .fc-overlay-text--action {
@@ -2248,7 +2651,7 @@ body {
   justify-content: center;
   background: none;
   border: none;
-  color: #ffffff;
+  color: var(--white);
   cursor: pointer;
   padding: 0;
 }
@@ -2270,7 +2673,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.82);
+  background: oklch(var(--black-parts) / 0.82);
 }
 
 .fc-start-window {
@@ -2279,18 +2682,18 @@ body {
   align-items: center;
   text-align: center;
   padding: 2.4rem 2.8rem;
-  background: #000;
-  border: 2px solid #fff;
+  background: var(--black);
+  border: 2px solid var(--white);
   max-width: 380px;
   width: 90%;
 }
 
 .fc-start-title {
-  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-size: var(--fs-h2);
   font-weight: 900;
   letter-spacing: 0.01em;
   line-height: 1.1;
-  color: #fff;
+  color: var(--white);
   margin: 0 0 2rem;
   text-transform: uppercase;
 }
@@ -2298,12 +2701,12 @@ body {
 .fc-start-btn {
   font-family: "Univers TE-20 Light", sans-serif;
   font-weight: 900;
-  font-size: 0.75rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-meta);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #000;
-  background: #fff;
-  border: 2px solid #fff;
+  color: var(--black);
+  background: var(--white);
+  border: 2px solid var(--white);
   padding: 0.8rem 2.4rem;
   cursor: pointer;
   transition:
@@ -2312,8 +2715,8 @@ body {
 }
 
 .fc-start-btn:hover {
-  background: #000;
-  color: #fff;
+  background: var(--black);
+  color: var(--white);
 }
 
 .fc-start-btn:active {
@@ -2330,37 +2733,31 @@ body {
 
 .fc-section-eyebrow {
   display: block;
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #a8acb4;
+  color: var(--ink-muted);
   margin-bottom: 0.7rem;
 }
 
 .fc-section-title {
-  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-size: var(--fs-h2);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--ink);
   margin: 0 0 1.5rem;
   line-height: 1.2;
 }
 
 .fc-section-text {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
   line-height: 1.9;
-  color: rgba(210, 213, 218, 0.6);
+  color: var(--ink-body);
   margin: 0 0 1.2rem;
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .fc-header {
-    padding: 6rem 5vw 2.5rem;
-  }
-  .fc-viewer-wrap {
-    padding: 2.5rem 5vw 0;
-  }
   .fc-body {
     padding: 3rem 5vw 5rem;
   }
@@ -2390,14 +2787,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: var(--black);
   z-index: 50;
 }
 
+/* Only ever seen if assets outlast the intro — so it carries the intro's
+   light ground rather than cutting to black. (The plain .spinner-container
+   still sits inside the dark 3D viewer.) */
 .spinner-container--fullpage {
   position: fixed;
   z-index: 9000;
-  background: #0a0a0b;
+  background: var(--bg);
+}
+
+.spinner-container--fullpage .spinner-title {
+  color: var(--ink);
 }
 
 .spinner-title {
@@ -2405,7 +2809,7 @@ body {
   font-size: clamp(2rem, 6vw, 4rem);
   font-weight: 400;
   letter-spacing: 0.28em;
-  color: #ffffff;
+  color: var(--white);
   opacity: 0.9;
   animation: rotateText 3s infinite linear;
 }
@@ -2426,7 +2830,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  background: rgba(0, 0, 0, 0.72);
+  background: oklch(var(--black-parts) / 0.4);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -2436,37 +2840,11 @@ body {
 
 .contact-modal {
   position: relative;
-  background: #0d0d0f;
-  border: 1px solid rgba(168, 172, 180, 0.18);
+  background: oklch(0.16 0.0042 285.92);
   border-radius: 14px;
   padding: 2.8rem 2.8rem 2.4rem;
   max-width: 440px;
   width: 100%;
-  box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.7),
-    inset 0 0 40px rgba(0, 0, 0, 0.3);
-}
-
-.contact-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: rgba(210, 213, 218, 0.45);
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-}
-.contact-close svg {
-  width: 18px;
-  height: 18px;
-}
-.contact-close:hover {
-  color: #e8e8ea;
 }
 
 .contact-eyebrow {
@@ -2474,7 +2852,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #a8acb4;
+  color: oklch(0.7437 0.0123 264.49);
   margin-bottom: 0.6rem;
 }
 
@@ -2482,7 +2860,7 @@ body {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--panel-ink);
   margin: 0 0 1.2rem;
   line-height: 1.1;
 }
@@ -2490,7 +2868,7 @@ body {
 .contact-body {
   font-size: 0.85rem;
   line-height: 1.75;
-  color: #ffffff;
+  color: var(--white);
   margin: 0 0 1.4rem;
 }
 
@@ -2504,7 +2882,7 @@ body {
 .contact-line {
   font-size: 0.88rem;
   line-height: 1.6;
-  color: #ffffff;
+  color: var(--white);
   margin: 0;
 }
 
@@ -2518,7 +2896,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  color: rgba(210, 213, 218, 0.45);
+  color: oklch(0.8722 0.0076 260.73 / 0.45);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2530,15 +2908,15 @@ body {
   height: 14px;
 }
 .contact-icon-btn:hover {
-  color: #e8e8ea;
+  color: var(--panel-ink);
 }
 
 .contact-legal {
   font-size: 0.7rem;
   line-height: 1.7;
-  color: rgba(210, 213, 218, 0.3);
+  color: oklch(0.8722 0.0076 260.73 / 0.3);
   margin: 0 0 1.8rem;
-  border-top: 1px solid rgba(168, 172, 180, 0.1);
+  border-top: 1px solid oklch(0.7437 0.0123 264.49 / 0.1);
   padding-top: 1rem;
 }
 
@@ -2547,9 +2925,9 @@ body {
   align-items: center;
   gap: 0.55rem;
   background: none;
-  border: 1px solid rgba(168, 172, 180, 0.28);
+  border: 1px solid oklch(0.7437 0.0123 264.49 / 0.28);
   border-radius: 8px;
-  color: rgba(210, 213, 218, 0.7);
+  color: oklch(0.8722 0.0076 260.73 / 0.7);
   font-family: "Univers TE-20 Light", sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
@@ -2567,8 +2945,8 @@ body {
   flex-shrink: 0;
 }
 .contact-send-btn:hover {
-  border-color: rgba(200, 203, 210, 0.55);
-  color: #e8e8ea;
+  border-color: oklch(0.8418 0.0102 267.35 / 0.55);
+  color: var(--panel-ink);
 }
 
 /* ─── About Modal ────────────────────────────────────────────── */
@@ -2576,7 +2954,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  background: rgba(0, 0, 0, 0.78);
+  background: oklch(var(--black-parts) / 0.3);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -2586,40 +2964,13 @@ body {
 
 .about-modal {
   position: relative;
-  background: #0d0d0f;
-  border: 1px solid rgba(168, 172, 180, 0.14);
-  border-radius: 16px;
+  background: oklch(0.16 0.0042 285.92);
+  border-radius: 15px;
   padding: 2.8rem;
   max-width: 820px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 75vh;
   overflow-y: auto;
-  box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.8),
-    inset 0 0 60px rgba(0, 0, 0, 0.4);
-}
-
-.about-close {
-  position: absolute;
-  top: 1.1rem;
-  right: 1.1rem;
-  background: none;
-  border: none;
-  color: rgba(210, 213, 218, 0.35);
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-  z-index: 1;
-}
-.about-close svg {
-  width: 18px;
-  height: 18px;
-}
-.about-close:hover {
-  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Side-by-side on desktop, stacked on mobile */
@@ -2642,7 +2993,7 @@ body {
 .about-photo-wrap {
   border-radius: 10px;
   overflow: hidden;
-  background: #0f0f11;
+  background: oklch(0.1693 0.0041 285.95);
   aspect-ratio: 3 / 4;
 }
 
@@ -2662,7 +3013,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #a8acb4;
+  color: oklch(0.7437 0.0123 264.49);
   margin-bottom: 0.7rem;
 }
 
@@ -2670,7 +3021,7 @@ body {
   font-size: clamp(1.7rem, 3.5vw, 2.4rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: #e8e8ea;
+  color: var(--panel-ink);
   margin: 0 0 1.8rem;
   line-height: 1.15;
 }
@@ -2678,15 +3029,15 @@ body {
 .about-text {
   font-size: 0.88rem;
   line-height: 1.85;
-  color: rgba(216, 219, 224, 0.72);
+  color: oklch(0.8906 0.0076 260.73 / 0.72);
   margin: 0 0 1.1rem;
 }
 
 .about-text--accent {
   font-size: 0.82rem;
   letter-spacing: 0.04em;
-  color: rgba(210, 213, 218, 0.6);
-  border-left: 2px solid rgba(168, 172, 180, 0.4);
+  color: oklch(0.8722 0.0076 260.73 / 0.6);
+  border-left: 2px solid oklch(0.7437 0.0123 264.49 / 0.4);
   padding-left: 0.9rem;
   margin-top: 1.6rem;
   font-style: italic;

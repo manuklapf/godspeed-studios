@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
+import { Link } from "react-router-dom"
 import ContactModal from "./ContactModal"
 import AboutModal from "./AboutModal"
 
@@ -98,9 +99,11 @@ export default function Navbar() {
   return (
     <>
       <nav className="navbar">
-        <a className="godspeed-logo" href="/">
+        {/* Link, not <a href> — a real navigation would reload the app and
+            throw away the scene that is already loaded behind this page. */}
+        <Link className="godspeed-logo" to="/">
           <WiggleSpan text={logo.text} done={logo.done} />
-        </a>
+        </Link>
 
         <div
           className={`hamburger-menu${menuOpen ? " open" : ""}`}

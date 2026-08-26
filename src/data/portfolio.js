@@ -7,7 +7,8 @@
    meshes in beanstalk.glb.
 
    Fields used in the 3D scene (speech bubble on hover):
-     tag, title, bubbleLabel, year, type, route
+     tag, title, bubbleLabel, year, type, and either `route` (an in-app page)
+     or `externalUrl` (opens in a new tab, no navigation)
 
    Fields used on the case-study / detail pages:
      tag, title, subtitle, description, link, year, bubbleLabel
@@ -96,20 +97,23 @@ export const references = [
 ]
 
 /* ─────────────────────────────────────────────────────────────────
-   All droplets in scene order (bottom → top of beanstalk).
-   Index 0 = the lowest GLB WaterDrop mesh, index N = the highest.
+   All droplets in scene order (top → bottom of beanstalk).
+   Index 0 = the highest GLB WaterDrop mesh, index N = the lowest.
+
+   That is the order Beanstalk.jsx traverses the meshes in, so index 0 is
+   both where the camera opens and the first entry in the side nav — the
+   reader starts on Marketplace and scrolls down through the rest.
    ───────────────────────────────────────────────────────────────── */
 export const allDroplets = [
+  { ...caseStudies[0], route: "/marketplace-case-study" },
+  /* Fashion Campaign (caseStudies[1], route "/fashion-campaign") is hidden
+     for now — swapped out for the Reservation System demo. That one has no
+     page of its own: `externalUrl` sends the click straight to the live demo
+     in a new tab, so the beanstalk stays where it is. */
+  { ...caseStudies[4], externalUrl: caseStudies[4].link },
   {
     ...references[0],
     route: "/video-photography",
     bubbleLabel: "Video & Photography Work",
   },
-  /* Fashion Campaign (caseStudies[1], route "/fashion-campaign") is hidden
-     for now — swapped out for the Reservation System demo. */
-  {
-    ...caseStudies[4],
-    externalUrl: "https://reservation-system-ten-tau.vercel.app/demo",
-  },
-  { ...caseStudies[0], route: "/marketplace-case-study" },
 ]

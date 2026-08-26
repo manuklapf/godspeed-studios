@@ -10,12 +10,53 @@ import { Preload, useProgress } from "@react-three/drei"
 import { useNavigate } from "react-router-dom"
 import Scene, { scrollCapSignal } from "./components/Scene"
 import Navbar from "./components/Navbar"
+import IntroSequence from "./components/IntroSequence"
 import { dropClickBus } from "./components/Beanstalk"
 import { allDroplets } from "./data/portfolio"
 import gsap from "gsap"
 
 /* ─── Total scroll pages ─────────────────────────────────────── */
 const SCROLL_PAGES = 7 // 700vh / 100vh
+
+/* The intro is a first-arrival moment, not something to sit through again on
+   the way back from a case study. Returning here — via "Back to the Garden",
+   the logo, or the browser's back button — should land straight in the scene.
+
+   sessionStorage rather than a module flag because the logo is a real
+   navigation that reloads the app, and rather than localStorage so a genuinely
+   new visit still gets the intro. Access is guarded: Safari's private mode
+   throws on read in some versions. */
+const INTRO_SEEN_KEY = "godspeed:intro-seen"
+
+function introAlreadySeen() {
+  try {
+    return sessionStorage.getItem(INTRO_SEEN_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+function markIntroSeen() {
+  try {
+    sessionStorage.setItem(INTRO_SEEN_KEY, "1")
+  } catch {
+    /* storage unavailable — the intro just plays again, which is harmless */
+  }
+}
+
+/* Scroll fraction is 1 - t, so the drop with the LARGEST t sits nearest the
+   top of the scroll range. Starting there leaves the whole journey ahead of
+   the reader as a downward scroll.
+
+   Resolved from the measured positions rather than assumed to be index 0, so
+   a reordered GLB can't silently drop the reader at the wrong end. */
+function topmostDropIdx(dropTs) {
+  let best = 0
+  dropTs.forEach((t, i) => {
+    if (t > dropTs[best]) best = i
+  })
+  return best
+}
 
 function DropNavList({ dropScrollTs, scrollProgress, onItemClick }) {
   const t = 1 - scrollProgress
@@ -78,6 +119,11 @@ export default function App() {
   const [dropScrollTs, setDropScrollTs] = useState([])
   const [whiteFade, setWhiteFade] = useState(false)
   const [activeDropIdx, setActiveDropIdx] = useState(-1)
+  /* The intro title card owns the screen until its click animation lands.
+     The scene starts fading up first (`sceneRevealed`) so the two cross-fade;
+     `introDone` then tears the card down and brings the UI in. */
+  const [sceneRevealed, setSceneRevealed] = useState(introAlreadySeen)
+  const [introDone, setIntroDone] = useState(introAlreadySeen)
   const navigate = useNavigate()
   // Minimum scroll fraction (0–1) enforced once drop positions are resolved.
   // Prevents scrolling above the topmost water drop.
@@ -96,8 +142,12 @@ export default function App() {
   /* Tracks whether a modal that needs scrolling is open — pauses the touch block */
   const modalScrollOpenRef = useRef(false)
   useEffect(() => {
-    const open = () => { modalScrollOpenRef.current = true }
-    const close = () => { modalScrollOpenRef.current = false }
+    const open = () => {
+      modalScrollOpenRef.current = true
+    }
+    const close = () => {
+      modalScrollOpenRef.current = false
+    }
     window.addEventListener("about:modalopen", open)
     window.addEventListener("about:modalclose", close)
     return () => {
@@ -108,7 +158,7 @@ export default function App() {
 
   /* On mobile, block manual touch/wheel scrolling — only arrows drive navigation */
   useEffect(() => {
-    if (!isMobileRef.current) return
+    if (!isMobileRef.current || !introDone) return
     const block = (e) => {
       if (modalScrollOpenRef.current) return
       e.preventDefault()
@@ -119,7 +169,7 @@ export default function App() {
       document.removeEventListener("touchmove", block)
       document.removeEventListener("wheel", block)
     }
-  }, [])
+  }, [introDone])
 
   /* Track raw scroll progress 0→1 */
   useEffect(() => {
@@ -127,14 +177,17 @@ export default function App() {
       const max = document.documentElement.scrollHeight - window.innerHeight
       const raw = max > 0 ? window.scrollY / max : 0
 
-      // Clamp: prevent scrolling past the topmost water drop
+      // Clamp: prevent scrolling past the topmost water drop. The epsilon
+      // matters — the start position rounds to a whole pixel and can land a
+      // hair under minFrac, which would otherwise bounce here and never
+      // publish the opening progress.
       const minFrac = minScrollFractionRef.current
-      if (minFrac > 0 && raw < minFrac) {
-        window.scrollTo({ top: Math.round(minFrac * max), behavior: "instant" })
+      if (minFrac > 0 && raw < minFrac - 1e-4) {
+        window.scrollTo({ top: Math.ceil(minFrac * max), behavior: "instant" })
         return
       }
 
-      const p = raw
+      const p = Math.max(raw, minFrac)
       setScrollProgress(p)
       setScrolled(p > 0.02)
 
@@ -174,14 +227,14 @@ export default function App() {
       minScrollFractionRef.current = 1 - e.detail.maxT
       if (e.detail.dropTs) {
         setDropScrollTs(e.detail.dropTs)
-        // Always start focused on the last (highest) waterdrop
+        // Start on the highest waterdrop, so every drop below it is reached
+        // by scrolling down
         if (e.detail.dropTs.length > 0) {
-          const lastIdx = e.detail.dropTs.length - 1
-          const lastDropT = e.detail.dropTs[lastIdx]
-          const sp = 1 - lastDropT
+          const topIdx = topmostDropIdx(e.detail.dropTs)
+          const sp = 1 - e.detail.dropTs[topIdx]
           const max = document.documentElement.scrollHeight - window.innerHeight
           window.scrollTo({ top: Math.round(sp * max), behavior: "instant" })
-          setActiveDropIdx(lastIdx)
+          setActiveDropIdx(topIdx)
         }
       }
     }
@@ -189,12 +242,11 @@ export default function App() {
     return () => window.removeEventListener("scrollcapset", handler)
   }, [])
 
-  /* Start at the bottom of the scroll space (base of beanstalk) — instant, no animation */
+  /* Park at the top of the scroll space until the drop positions resolve —
+     instant, no animation. The scrollcapset handler then settles on the
+     highest drop, leaving the rest of the stalk below as a downward scroll. */
   useLayoutEffect(() => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight - window.innerHeight,
-      behavior: "instant",
-    })
+    window.scrollTo({ top: 0, behavior: "instant" })
     // Clear any leftover zoom state from a previous droplet click
     dropClickBus.active = false
     dropClickBus.targetPos = null
@@ -208,21 +260,22 @@ export default function App() {
     if (ts.length === 0) return
     minScrollFractionRef.current = 1 - scrollCapSignal.maxT
     setDropScrollTs(ts)
-    const lastIdx = ts.length - 1
-    const sp = 1 - ts[lastIdx]
+    const topIdx = topmostDropIdx(ts)
+    const sp = 1 - ts[topIdx]
     const max = document.documentElement.scrollHeight - window.innerHeight
     window.scrollTo({ top: Math.round(sp * max), behavior: "instant" })
-    setActiveDropIdx(lastIdx)
+    setActiveDropIdx(topIdx)
   }, [])
 
-  /* Intro animation */
+  /* Scroll-hint fade-in — runs once the overlay is mounted */
   useEffect(() => {
+    if (!introDone) return
     gsap.fromTo(
       ".scroll-hint",
       { opacity: 0 },
       { opacity: 1, duration: 1.8, ease: "power2.out", delay: 1.4 },
     )
-  }, [])
+  }, [introDone])
 
   /* White fade on drop click → navigate to route after fade */
   useEffect(() => {
@@ -273,7 +326,8 @@ export default function App() {
       <div className="scroll-space" ref={scrollRef} />
 
       {/* ── Fixed Three.js canvas ────────────────────────────── */}
-      <div className="canvas-container">
+      {/* Mounted from the start so the scene preloads behind the intro */}
+      <div className={`canvas-container${sceneRevealed ? " revealed" : ""}`}>
         <Canvas
           camera={{ position: [12, 66, 12], fov: 55, near: 0.1, far: 600 }}
           performance={{ min: 0.5 }}
@@ -289,8 +343,20 @@ export default function App() {
         </Canvas>
       </div>
 
+      {/* ── Intro title card ──────────────────────────────────── */}
+      {!introDone && (
+        <IntroSequence
+          onReveal={() => setSceneRevealed(true)}
+          onComplete={() => {
+            markIntroSeen()
+            setIntroDone(true)
+          }}
+        />
+      )}
+
       {/* ── Loading overlay ───────────────────────────────────── */}
-      <AppLoadingOverlay />
+      {/* Only after the intro — until then the title card is the loader */}
+      {introDone && <AppLoadingOverlay />}
 
       {/* ── White fade overlay ────────────────────────────── */}
       <div
@@ -299,69 +365,71 @@ export default function App() {
       />
 
       {/* ── UI Overlay ──────────────────────────────────────── */}
-      <div className="ui-overlay">
-        {/* Navbar */}
-        <Navbar />
+      {introDone && (
+        <div className="ui-overlay">
+          {/* Navbar */}
+          <Navbar />
 
-        {/* Drop navigation list */}
-        {dropScrollTs.length > 0 && (
-          <DropNavList
-            dropScrollTs={dropScrollTs}
-            scrollProgress={scrollProgress}
-            onItemClick={scrollToDropIdx}
-          />
-        )}
+          {/* Drop navigation list */}
+          {dropScrollTs.length > 0 && (
+            <DropNavList
+              dropScrollTs={dropScrollTs}
+              scrollProgress={scrollProgress}
+              onItemClick={scrollToDropIdx}
+            />
+          )}
 
-        {/* Scroll hint */}
-        <div className={`scroll-hint ${scrolled ? "hidden" : ""}`}>
-          <span>Scroll</span>
-          <div className="scroll-arrow" />
+          {/* Scroll hint */}
+          <div className={`scroll-hint ${scrolled ? "hidden" : ""}`}>
+            <span>Scroll</span>
+            <div className="scroll-arrow" />
+          </div>
+
+          {/* Mobile-only: up / down arrows to jump between waterdrops */}
+          {isMobileRef.current && dropScrollTs.length > 0 && (
+            <>
+              <button
+                className={`mobile-drop-arrow mobile-drop-arrow--up${
+                  activeDropIdx <= 0 ? " mobile-drop-arrow--hidden" : ""
+                }`}
+                onClick={() => scrollToDropIdx(activeDropIdx - 1)}
+                aria-label="Previous waterdrop"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="18 15 12 9 6 15" />
+                </svg>
+              </button>
+              <button
+                className={`mobile-drop-arrow mobile-drop-arrow--down${
+                  activeDropIdx >= dropScrollTs.length - 1
+                    ? " mobile-drop-arrow--hidden"
+                    : ""
+                }`}
+                onClick={() => scrollToDropIdx(activeDropIdx + 1)}
+                aria-label="Next waterdrop"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
-
-        {/* Mobile-only: up / down arrows to jump between waterdrops */}
-        {isMobileRef.current && dropScrollTs.length > 0 && (
-          <>
-            <button
-              className={`mobile-drop-arrow mobile-drop-arrow--up${
-                activeDropIdx <= 0 ? " mobile-drop-arrow--hidden" : ""
-              }`}
-              onClick={() => scrollToDropIdx(activeDropIdx - 1)}
-              aria-label="Previous waterdrop"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="18 15 12 9 6 15" />
-              </svg>
-            </button>
-            <button
-              className={`mobile-drop-arrow mobile-drop-arrow--down${
-                activeDropIdx >= dropScrollTs.length - 1
-                  ? " mobile-drop-arrow--hidden"
-                  : ""
-              }`}
-              onClick={() => scrollToDropIdx(activeDropIdx + 1)}
-              aria-label="Next waterdrop"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-          </>
-        )}
-      </div>
+      )}
     </>
   )
 }

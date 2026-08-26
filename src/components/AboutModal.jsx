@@ -1,21 +1,6 @@
 import React, { useEffect, useCallback } from "react"
 import { createPortal } from "react-dom"
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  )
-}
+import ModalCloseButton from "./ModalCloseButton"
 
 export default function AboutModal({ onClose }) {
   const handleBackdrop = useCallback(
@@ -51,16 +36,13 @@ export default function AboutModal({ onClose }) {
 
   return createPortal(
     <div className="about-backdrop" onClick={handleBackdrop}>
+      <ModalCloseButton onClose={onClose} label="Close about" />
       <div
         className="about-modal"
         role="dialog"
         aria-modal="true"
         aria-label="About"
       >
-        <button className="about-close" onClick={onClose} aria-label="Close">
-          <CloseIcon />
-        </button>
-
         <div className="about-layout">
           {/* ── Photos ── */}
           <div className="about-photos">
