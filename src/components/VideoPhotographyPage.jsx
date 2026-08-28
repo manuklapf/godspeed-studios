@@ -1,5 +1,7 @@
 import React, { useState } from "react"
 import PageWrapper from "./PageWrapper"
+import LoadingScreen from "./LoadingScreen"
+import { useMediaPreload } from "../hooks/useMediaPreload"
 
 /* ─────────────────────────────────────────────────────────────────
    Media data
@@ -87,13 +89,24 @@ const MEDIA = [
   },
 ]
 
+/* Everything the grid paints on arrival: the stills, and the looping clips
+   that stand in for the films. Also read by App, which warms these in the
+   background while the reader is still in the garden.
+
+   The films themselves are not here. tokyo_summer_festivals.mp4 alone is
+   42MB — nobody should wait for that to see the page, so it stays where it
+   is: fetched when someone presses play on it. */
+export const VIDEO_PHOTO_ASSETS = MEDIA.flatMap((item) =>
+  [item.src, item.thumb].filter(Boolean),
+)
+
 /* ─────────────────────────────────────────────────────────────────
    Photo cell
    ───────────────────────────────────────────────────────────────── */
 function MediaPhoto({ src }) {
   return (
     <div className="mc-photo">
-      <img src={src} alt="" loading="lazy" decoding="async" />
+      <img src={src} alt="" decoding="async" />
     </div>
   )
 }
@@ -162,8 +175,16 @@ function MediaVideo({ thumb, embedId, videoSrc, label, sublabel }) {
    Page
    ───────────────────────────────────────────────────────────────── */
 export default function VideoPhotographyPage() {
+  /* A grid of large stills is exactly the kind of page that assembles itself
+     square by square — held back until it is all here, it simply appears. */
+  const media = useMediaPreload(VIDEO_PHOTO_ASSETS)
+
   return (
     <PageWrapper>
+      {!media.ready && (
+        <LoadingScreen variant="fullpage" progress={media.progress} />
+      )}
+
       <section className="vp-page">
         <header className="vp-header">
           <span className="vp-tag">Work</span>

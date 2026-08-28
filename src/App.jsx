@@ -11,8 +11,13 @@ import { useNavigate } from "react-router-dom"
 import Scene, { scrollCapSignal } from "./components/Scene"
 import Navbar from "./components/Navbar"
 import IntroSequence from "./components/IntroSequence"
+import LoadingScreen from "./components/LoadingScreen"
+import { PROTOTYPE_IMAGES } from "./components/MarketplacePrototype"
+import { VIDEO_PHOTO_ASSETS } from "./components/VideoPhotographyPage"
 import { dropClickBus } from "./components/Beanstalk"
 import { allDroplets } from "./data/portfolio"
+import { marketplaceJourney, journeyAssets } from "./data/journeys"
+import { prefetchMedia, connectionIsFrugal } from "./hooks/useMediaPreload"
 import gsap from "gsap"
 
 /* ─── Total scroll pages ─────────────────────────────────────── */
@@ -89,8 +94,22 @@ function DropNavList({ dropScrollTs, scrollProgress, onItemClick }) {
   )
 }
 
+/* Every asset behind a page the reader hasn't opened yet. Warmed in the
+   background once the garden itself is loaded and idle, so opening one of
+   those pages finds its media already here and skips its loading screen.
+
+   Deliberately not the whole of /public: the long film is 42MB and belongs
+   to a press of play, not to arriving at the site. */
+const OTHER_PAGE_MEDIA = [
+  ...journeyAssets(marketplaceJourney),
+  ...PROTOTYPE_IMAGES,
+  ...VIDEO_PHOTO_ASSETS,
+  "/about-1.webp",
+  "/about-2.webp",
+]
+
 function AppLoadingOverlay() {
-  const { active } = useProgress()
+  const { active, progress } = useProgress()
   const wasActive = useRef(active)
   const [visible, setVisible] = useState(active)
 
@@ -104,11 +123,22 @@ function AppLoadingOverlay() {
   }, [active])
 
   if (!visible) return null
-  return (
-    <div className="spinner-container spinner-container--fullpage">
-      <h1 className="spinner-title">LOADING...</h1>
-    </div>
-  )
+  return <LoadingScreen variant="fullpage" progress={progress / 100} />
+}
+
+/* Lives inside the Canvas: useProgress is only meaningful next to the
+   loaders it watches. Reports the scene as done exactly once. */
+function SceneReadyBeacon({ onReady }) {
+  const { active, progress } = useProgress()
+  const firedRef = useRef(false)
+
+  useEffect(() => {
+    if (firedRef.current || active || progress < 100) return
+    firedRef.current = true
+    onReady()
+  }, [active, progress, onReady])
+
+  return null
 }
 
 export default function App() {
@@ -128,6 +158,8 @@ export default function App() {
   // Minimum scroll fraction (0–1) enforced once drop positions are resolved.
   // Prevents scrolling above the topmost water drop.
   const minScrollFractionRef = useRef(0)
+  /* The background warming runs once per visit, whichever trigger gets there */
+  const prefetchStartedRef = useRef(false)
   // Detect mobile once on mount
   const isMobileRef = useRef(
     typeof window !== "undefined" &&
@@ -314,6 +346,30 @@ export default function App() {
     [dropScrollTs],
   )
 
+  /* Kicked off when the garden has finished loading — never before, so the
+     scene's own assets never compete with it for the connection. Idle time
+     if the browser offers any, and skipped entirely on a connection that has
+     asked us not to spend its bandwidth. */
+  const startBackgroundPrefetch = useCallback(() => {
+    if (prefetchStartedRef.current) return
+    prefetchStartedRef.current = true
+    if (connectionIsFrugal()) return
+    const run = () => prefetchMedia(OTHER_PAGE_MEDIA)
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(run, { timeout: 4000 })
+    } else {
+      setTimeout(run, 1200)
+    }
+  }, [])
+
+  /* Backstop: a scene served entirely from cache can settle without the
+     progress store ever reporting a load, and the warming shouldn't be lost
+     to that. Late is fine here — it is all background work. */
+  useEffect(() => {
+    const id = setTimeout(startBackgroundPrefetch, 8000)
+    return () => clearTimeout(id)
+  }, [startBackgroundPrefetch])
+
   const dismissFade = () => {
     setWhiteFade(false)
     dropClickBus.active = false
@@ -340,6 +396,7 @@ export default function App() {
         >
           <Scene scrollProgress={scrollProgress} />
           <Preload all />
+          <SceneReadyBeacon onReady={startBackgroundPrefetch} />
         </Canvas>
       </div>
 

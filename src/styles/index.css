@@ -2880,13 +2880,15 @@ body {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
   background: var(--black);
   z-index: 50;
 }
 
-/* Only ever seen if assets outlast the intro — so it carries the intro's
+/* Held over a whole page while its media loads — so it carries the site's
    light ground rather than cutting to black. (The plain .spinner-container
    still sits inside the dark 3D viewer.) */
 .spinner-container--fullpage {
@@ -2895,8 +2897,46 @@ body {
   background: var(--bg);
 }
 
-.spinner-container--fullpage .spinner-title {
+/* Fills whatever box it is dropped into — a modal, a card — on that box's
+   own ground, so the panel doesn't flash a different colour before its
+   content arrives. */
+.spinner-container--panel {
+  background: var(--white);
+  z-index: 5;
+}
+
+.spinner-container--fullpage .spinner-title,
+.spinner-container--panel .spinner-title {
   color: var(--ink);
+}
+
+/* Counts files, not bytes — a rough read of how far along the set is. */
+.spinner-bar {
+  width: min(220px, 40vw);
+  height: 2px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: oklch(var(--white-parts) / 0.2);
+}
+
+.spinner-container--fullpage .spinner-bar,
+.spinner-container--panel .spinner-bar {
+  background: oklch(var(--black-parts) / 0.12);
+}
+
+.spinner-bar span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--white);
+  transition: transform 0.3s ease-out;
+}
+
+.spinner-container--fullpage .spinner-bar span,
+.spinner-container--panel .spinner-bar span {
+  background: var(--ink);
 }
 
 .spinner-title {

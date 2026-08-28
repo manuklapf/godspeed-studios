@@ -4,14 +4,22 @@ import MarketplacePrototype from "./MarketplacePrototype"
 import CaseStudyJourney from "./CaseStudyJourney"
 import CaseStudyCTA from "./CaseStudyCTA"
 import ModalCloseButton from "./ModalCloseButton"
-import { marketplaceJourney } from "../data/journeys"
+import LoadingScreen from "./LoadingScreen"
+import { marketplaceJourney, journeyAssets } from "../data/journeys"
 import { useCardStack } from "../hooks/useCardStack"
+import { useMediaPreload } from "../hooks/useMediaPreload"
 
 const CTA_LABEL = "Open Prototype"
+
+/* The case study is a page of screenshots — held back until they are all
+   here, it arrives whole instead of assembling itself as the reader scrolls. */
+const PAGE_MEDIA = journeyAssets(marketplaceJourney)
 
 export default function MarketplaceCaseStudyPage() {
   const pageRef = useRef(null)
   useCardStack(pageRef)
+
+  const media = useMediaPreload(PAGE_MEDIA)
 
   /* The prototype is a component, not a URL, so "open" means a modal over
      the page rather than a route of its own. */
@@ -34,6 +42,13 @@ export default function MarketplaceCaseStudyPage() {
 
   return (
     <PageWrapper>
+      {/* Over the page, not instead of it: the cards lay out and the stack
+          measures itself behind the screen, so what is uncovered is a page
+          already in its final shape. */}
+      {!media.ready && (
+        <LoadingScreen variant="fullpage" progress={media.progress} />
+      )}
+
       <section className="cs-page" ref={pageRef}>
         <header className="cs-header">
           <span className="cs-tag">Case Study</span>

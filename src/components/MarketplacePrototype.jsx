@@ -1,4 +1,6 @@
 import React, { useState } from "react"
+import LoadingScreen from "./LoadingScreen"
+import { useMediaPreload } from "../hooks/useMediaPreload"
 
 const ITEMS = [
   "Frame 2",
@@ -27,6 +29,11 @@ const ITEMS = [
   "Frame 25",
   "Frame 26",
 ].map((name, i) => ({ id: i, src: `/marketplace/${name}.webp` }))
+
+/* Also read by App, which warms these in the background while the reader is
+   still in the garden — by the time the prototype opens they are usually
+   already here and the loading screen never shows. */
+export const PROTOTYPE_IMAGES = ITEMS.map((item) => item.src)
 
 const CATEGORIES = [
   {
@@ -123,6 +130,10 @@ export default function MarketplacePrototype() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue] = useState("")
 
+  /* The grid is the prototype — a wall that fills in tile by tile reads as
+     broken, so nothing is rendered until every frame is here. */
+  const media = useMediaPreload(PROTOTYPE_IMAGES)
+
   /* filter and cart share the same slot — opening one closes the other */
   const toggleFilter = () => {
     setFilterOpen((o) => !o)
@@ -135,6 +146,15 @@ export default function MarketplacePrototype() {
 
   // zoom 0 → 8 cols, zoom 100 → 2 cols
   const cols = Math.max(2, Math.round(8 - (zoom / 100) * 6))
+
+  /* Same box either way, so the modal doesn't resize under the loader */
+  if (!media.ready) {
+    return (
+      <div className="mk-device">
+        <LoadingScreen variant="panel" progress={media.progress} />
+      </div>
+    )
+  }
 
   return (
     <div className="mk-device">
@@ -190,7 +210,7 @@ export default function MarketplacePrototype() {
           <div className="mk-grid" style={{ "--mk-cols": cols }}>
             {ITEMS.map((item) => (
               <div key={item.id} className="mk-cell">
-                <img src={item.src} alt="" loading="lazy" draggable={false} />
+                <img src={item.src} alt="" draggable={false} />
               </div>
             ))}
           </div>

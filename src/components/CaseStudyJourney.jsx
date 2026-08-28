@@ -57,7 +57,7 @@ function JourneyMedia({
         {...frameProps}
       >
         {src ? (
-          <img src={src} alt={alt || label} loading="lazy" decoding="async" />
+          <img src={src} alt={alt || label} decoding="async" />
         ) : (
           <div className="js-placeholder" aria-hidden="true">
             <svg viewBox="0 0 32 32" className="js-placeholder-mark">

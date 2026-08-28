@@ -178,3 +178,11 @@ export const reservationJourney = [
     slot: "demo",
   },
 ]
+
+/* Every image a journey renders, for the page to preload before it shows
+   itself. Steps whose media is still a placeholder contribute nothing. */
+export function journeyAssets(steps) {
+  return steps.flatMap((step) =>
+    (step.media || []).map((m) => m.src).filter(Boolean),
+  )
+}
