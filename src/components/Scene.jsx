@@ -17,6 +17,15 @@ import { allDroplets } from "../data/portfolio"
    App.jsx reads this via the 'scrollcapset' CustomEvent. */
 export const scrollCapSignal = { maxT: 1, ready: false }
 
+/* Mobile runs a wider fov, so the same stand-off distance reads as much
+   further away — pull the drop-focus camera in to compensate. */
+const IS_MOBILE =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 768px)").matches
+
+/* How far in front of a water drop the camera parks when focusing it */
+const DROP_FRONT_DIST = IS_MOBILE ? 4.2 : 7
+
 /* ──────────────────────────────────────────────────────────────
    ScrollCamera — lives inside Canvas so it can use Three.js hooks
    ────────────────────────────────────────────────────────────── */
@@ -88,8 +97,12 @@ function ScrollCamera({ scrollProgress }) {
           const dx = wp.x,
             dz = wp.z
           const dLen = Math.sqrt(dx * dx + dz * dz) || 1
-          // Place the front-on camera 7 units out from the drop along that direction
-          dd.frontPos.set(wp.x + (dx / dLen) * 7, wp.y, wp.z + (dz / dLen) * 7)
+          // Park the front-on camera DROP_FRONT_DIST units out along that direction
+          dd.frontPos.set(
+            wp.x + (dx / dLen) * DROP_FRONT_DIST,
+            wp.y,
+            wp.z + (dz / dLen) * DROP_FRONT_DIST,
+          )
           // Map the drop's Y (0–~70) into the same 0–1 scroll space as `height` (0–64)
           dd.scrollT = THREE.MathUtils.clamp(wp.y / 64, 0, 1)
         }

@@ -12,6 +12,15 @@ export const dropClickBus = {
   targetPos: null, // THREE.Vector3 of the clicked drop's world position
 }
 
+/* Viewport check — used for tap tolerance and label sizing */
+const isMobileViewport = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 768px)").matches
+
+/* How far (in CSS px) a tap may land from a drop and still count as a hit.
+   Water drops are tiny on a phone screen, so a direct raycast is unforgiving. */
+const TAP_SLOP = 44
+
 /* ──────────────────────────────────────────────────────────────
    Stalk curve definition (exported so ScrollCamera can query it)
    ────────────────────────────────────────────────────────────── */
@@ -277,6 +286,9 @@ function useWaterDropAnimation(root) {
 function DropLabel({ node }) {
   const groupRef = useRef()
   const sphere = useRef(new THREE.Sphere())
+  // Phone labels sit tighter to the drop and are scaled up to stay readable
+  // (the mobile camera runs a wider fov, which shrinks distance-scaled Html)
+  const mobile = isMobileViewport()
 
   useFrame(() => {
     if (!groupRef.current || !node.geometry) return
@@ -286,7 +298,7 @@ function DropLabel({ node }) {
     sphere.current.applyMatrix4(node.matrixWorld)
     groupRef.current.position.set(
       sphere.current.center.x,
-      sphere.current.center.y + sphere.current.radius + 0.35,
+      sphere.current.center.y + sphere.current.radius + (mobile ? 0.2 : 0.35),
       sphere.current.center.z,
     )
   })
@@ -298,7 +310,7 @@ function DropLabel({ node }) {
     <group ref={groupRef} position={[0, -1000, 0]}>
       <Html
         center
-        distanceFactor={9}
+        distanceFactor={mobile ? 12 : 9}
         zIndexRange={[50, 0]}
         style={{ pointerEvents: "none" }}
       >
@@ -317,11 +329,7 @@ function DropLabel({ node }) {
    MobileDropLabels — shows all bubbles simultaneously on mobile
    ────────────────────────────────────────────────────────────── */
 function MobileDropLabels() {
-  const [isMobile] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 768px)").matches,
-  )
+  const [isMobile] = useState(isMobileViewport)
   const [ready, setReady] = useState(false)
   const checkedRef = useRef(false)
 
@@ -350,31 +358,72 @@ function MobileDropLabels() {
 function WaterDropHoverOverlay() {
   const groupRef = useRef()
   const [hoveredData, setHoveredData] = useState(null)
-  const { raycaster, pointer, gl } = useThree()
+  const { raycaster, pointer, gl, camera } = useThree()
   const prevHovered = useRef(null)
   const tmpPos = useRef(new THREE.Vector3())
   const sphere = useRef(new THREE.Sphere())
+  // Touch has no hover — mobile shows a persistent label per drop via
+  // MobileDropLabels instead. Running this overlay too would stack a second
+  // bubble on whichever drop the (centred) pointer happens to sit on.
+  const mobile = isMobileViewport()
 
-  // Click listener — fires zoom + white fade when a drop is clicked
+  // Click listener — fires zoom + white fade when a drop is clicked.
+  // The pick is done here from the event's own coordinates rather than reusing
+  // the hover raycast: on touch the browser can dispatch pointerdown and click
+  // in the same task, so no frame has run yet and the hover state is still
+  // stale — which is why the first tap used to do nothing.
   useEffect(() => {
-    const handleClick = () => {
-      if (!prevHovered.current) return
+    const clickRay = new THREE.Raycaster()
+    const ndc = new THREE.Vector2()
+    const proj = new THREE.Vector3()
+
+    const pickAt = (clientX, clientY) => {
+      const rect = gl.domElement.getBoundingClientRect()
+      const localX = clientX - rect.left
+      const localY = clientY - rect.top
+      ndc.set((localX / rect.width) * 2 - 1, -(localY / rect.height) * 2 + 1)
+      clickRay.setFromCamera(ndc, camera)
+      const hits = clickRay.intersectObjects(waterDropRefs.current, false)
+      if (hits.length > 0) return hits[0].object
+
+      // Touch: accept a near miss so the drops aren't pixel-hunting targets
+      if (!isMobileViewport()) return null
+      let best = null
+      let bestDist = TAP_SLOP
+      waterDropRefs.current.forEach((node) => {
+        node.getWorldPosition(proj)
+        proj.project(camera)
+        if (proj.z > 1) return // behind the camera
+        const sx = ((proj.x + 1) / 2) * rect.width
+        const sy = ((1 - proj.y) / 2) * rect.height
+        const d = Math.hypot(sx - localX, sy - localY)
+        if (d < bestDist) {
+          bestDist = d
+          best = node
+        }
+      })
+      return best
+    }
+
+    const handleClick = (e) => {
+      const hit = pickAt(e.clientX, e.clientY)
+      if (!hit) return
       const wp = new THREE.Vector3()
-      prevHovered.current.getWorldPosition(wp)
+      hit.getWorldPosition(wp)
       dropClickBus.active = true
       dropClickBus.targetPos = wp.clone()
       window.dispatchEvent(
         new CustomEvent("dropletclick", {
-          detail: { data: prevHovered.current.userData.dropData },
+          detail: { data: hit.userData.dropData },
         }),
       )
     }
     gl.domElement.addEventListener("click", handleClick)
     return () => gl.domElement.removeEventListener("click", handleClick)
-  }, [gl])
+  }, [gl, camera])
 
   useFrame(({ camera }) => {
-    if (waterDropRefs.current.length === 0) return
+    if (mobile || waterDropRefs.current.length === 0) return
 
     raycaster.setFromCamera(pointer, camera)
     const intersects = raycaster.intersectObjects(waterDropRefs.current, false)
@@ -401,7 +450,7 @@ function WaterDropHoverOverlay() {
 
   return (
     <group ref={groupRef} position={[0, -1000, 0]}>
-      {hoveredData && (
+      {!mobile && hoveredData && (
         <Html
           center
           distanceFactor={9}

@@ -758,6 +758,16 @@ body {
   margin-top: 0.25rem;
 }
 
+/* Phone labels are scaled up in 3D space (see DropLabel) — keep the box
+   narrow so the enlarged bubble still fits the viewport. */
+@media (max-width: 768px) {
+  .speech-bubble {
+    min-width: 90px;
+    max-width: 150px;
+    padding: 0.4rem 0.7rem;
+  }
+}
+
 /* ─── White Fade Overlay ─────────────────────────────────────── */
 .white-fade {
   position: fixed;
@@ -879,11 +889,13 @@ body {
 }
 
 /* Set by useCardStack on any card too tall to fit between the rest line and
-   the bottom of the screen. Pinned, such a card would hold its head in place
-   with its tail below the fold and then be covered by the next one, so the
-   reader could never reach its end — most often on phones and tablets, where
-   the same card is far taller relative to the viewport. Must follow the rule
-   above: same specificity, so source order is what wins. */
+   the bottom of the screen. Pinned by its head, such a card would hold its
+   title in place with its tail below the fold and then be covered by the next
+   one, so the reader could never reach its end. Phones don't get this: there
+   almost every card is that tall, and taking them out of the stack left the
+   page transitioning two different ways, so the hook pins them by the tail
+   instead and they keep the stack's fade. Must follow the rule above: same
+   specificity, so source order is what wins. */
 .cs-page > .cs-card--tall {
   position: static;
 }
@@ -1701,13 +1713,26 @@ body {
 /* Portrait artwork (phone screens) would otherwise run several times the
    height of the landscape frames beside it. */
 .js-figure--narrow .js-frame {
-  max-width: clamp(150px, 22cqi, 230px);
+  max-width: min(clamp(150px, 22cqi, 230px), var(--frame-cap-w));
   margin-inline: auto;
 }
 
 .js-frame {
+  /* One ceiling for every frame at every width. Without it a frame is only
+     as tall as its column is wide, so the same artwork ran ~470px on a
+     desktop column and ~230px on a phone — the taller portrait ones over
+     500px. Capping the height alone wouldn't do: the frame crops with
+     object-fit: cover, so a shorter box would cut the screen off. Capping
+     the width to height x ratio holds the same ceiling by shrinking the
+     whole frame, artwork intact. */
+  --frame-max-h: 420px;
+  --frame-cap-w: calc(var(--frame-max-h) * var(--frame-ratio, 16 / 10));
+  max-height: var(--frame-max-h);
+  max-width: var(--frame-cap-w);
+  margin-inline: auto;
+
   overflow: hidden;
-  border-radius: calc(var(--card-radius) * 0.55);
+  border-radius: calc(var(--card-radius) * 0.25);
   background: var(--bg-sunk);
 }
 
@@ -1716,6 +1741,62 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* A frame with artwork behind it is a button — strip the control chrome so
+   it stays the same box, and say it opens by growing a little under the
+   pointer. The frame already clips, so the zoom stays inside its corners. */
+.js-frame--zoom {
+  /* Block, not the button default of inline-block: the frame's own
+     margin-inline: auto only centres a block box, and an inline one would
+     also sit on a text baseline and carry a descender's gap under it. */
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.js-frame--zoom img {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.js-frame--zoom:hover img,
+.js-frame--zoom:focus-visible img {
+  transform: scale(1.04);
+}
+
+.js-frame--zoom:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-frame--zoom img {
+    transition: none;
+  }
+  .js-frame--zoom:hover img,
+  .js-frame--zoom:focus-visible img {
+    transform: none;
+  }
+}
+
+/* ── Image lightbox ──────────────────────────────────────────────
+   The prototype modal's backdrop and close button, but the image itself is
+   the panel: sizing against the fixed backdrop lets it take the whole
+   screen at its own ratio, uncropped, with no card ground behind it.
+   Doubled class so it also outranks the panel's mobile fixed height. */
+.cs-stage-modal.js-lightbox-img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: visible;
+  background: none;
+  border-radius: calc(var(--card-radius) * 0.25);
+  cursor: default;
 }
 
 /* Stand-in until real artwork lands — deliberately reads as empty rather
@@ -1751,6 +1832,20 @@ body {
   font-size: var(--fs-meta);
   line-height: 1.5;
   color: var(--ink-muted);
+}
+
+@media (max-width: 768px) {
+  /* On a phone the card is one column, so the artwork sits on its centre
+     line — a caption ranged left under a centred frame reads as a stray
+     line of copy rather than as that frame's label. */
+  .js-figure {
+    text-align: center;
+  }
+
+  .js-caption {
+    margin-inline: auto;
+    max-width: 46ch;
+  }
 }
 
 @font-face {

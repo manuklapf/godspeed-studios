@@ -18,6 +18,12 @@ import { useEffect } from "react"
 /* How far out the fade starts, measured from the resting line */
 const fadeRange = () => Math.min(window.innerHeight * 0.62, 620)
 
+/* Breathing room left under a card that pins by its tail instead of its head */
+const TAIL_GAP = 16
+
+/* Phones keep every card in the stack (see the tall-card handling below) */
+const isMobile = () => window.matchMedia("(max-width: 768px)").matches
+
 export function useCardStack(ref) {
   useEffect(() => {
     const root = ref.current
@@ -29,23 +35,43 @@ export function useCardStack(ref) {
 
     const measure = () => {
       const children = Array.from(root.children)
+      const mobile = isMobile()
 
       /* Decided fresh every time: a resize, or an image finally landing, can
          change which cards still fit. */
-      children.forEach((el) => el.classList.remove("cs-card--tall"))
+      children.forEach((el) => {
+        el.classList.remove("cs-card--tall")
+        el.style.top = ""
+      })
 
-      /* `top` is a clamp(), so resolve it off whatever is sticky right now */
+      /* `top` is a clamp(), so resolve it off whatever is sticky right now —
+         with the inline tops above cleared, this reads the stylesheet's line */
       const pinned = children.find(
         (el) => getComputedStyle(el).position === "sticky",
       )
       restLine = pinned ? parseFloat(getComputedStyle(pinned).top) || 0 : 0
 
-      /* A card taller than the room under the rest line would pin with its
-         tail below the fold and then get covered by the next card, so its
-         end could never be read. Those opt out of sticking and scroll. */
+      /* A card taller than the room under the rest line can't pin by its head:
+         it would hold its title in place with its tail below the fold and then
+         be covered by the next card, so its end could never be read.
+
+         On a phone nearly every card is that tall, and dropping them from the
+         stack left the page transitioning two different ways. So instead they
+         pin by their tail — the card scrolls until its end sits just above the
+         bottom of the screen, then holds there and takes the same slide-over
+         fade as any other card. Wider screens keep the plain scroll, where a
+         card that overflows is the exception rather than the rule. */
       const room = window.innerHeight - restLine
       children.forEach((el) => {
-        if (el.getBoundingClientRect().height > room) {
+        if (getComputedStyle(el).position !== "sticky") return
+        const height = el.getBoundingClientRect().height
+        if (height <= room) return
+        if (mobile) {
+          el.style.top = `${Math.min(
+            restLine,
+            window.innerHeight - height - TAIL_GAP,
+          )}px`
+        } else {
           el.classList.add("cs-card--tall")
         }
       })
@@ -76,8 +102,11 @@ export function useCardStack(ref) {
           card.style.pointerEvents = ""
           return
         }
-        /* distance the incoming card's top edge still has to fall before it
-           sits on the resting line — at 0 this card is fully covered */
+        /* Distance the incoming card's top edge still has to fall before it
+           sits on the resting line — at 0 this card is covered. Measured
+           against the stylesheet's line even for a tail-pinned card, whose
+           own top edge is above the fold by then: what matters is where the
+           card coming over it lands. */
         const gap = next.getBoundingClientRect().top - restLine
         const progress = Math.min(Math.max(1 - gap / range, 0), 1)
         card.style.opacity = String(1 - progress)
@@ -115,6 +144,7 @@ export function useCardStack(ref) {
       Array.from(root.children).forEach((card) => {
         card.style.opacity = ""
         card.style.pointerEvents = ""
+        card.style.top = ""
         card.classList.remove("cs-card--tall")
       })
     }

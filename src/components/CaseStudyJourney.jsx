@@ -1,4 +1,6 @@
-import React from "react"
+import React, { useCallback, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
+import ModalCloseButton from "./ModalCloseButton"
 
 /* ──────────────────────────────────────────────────────────────
    CaseStudyJourney
@@ -18,6 +20,10 @@ import React from "react"
 
    A media entry with no `src` renders a labelled placeholder panel — the
    layout is real, the artwork is not yet.
+
+   Artwork opens full size in a lightbox on click — the screenshots carry
+   detail the card-sized frame can't show. Placeholders don't; there is
+   nothing behind them to open.
    ────────────────────────────────────────────────────────────── */
 
 function JourneyMedia({
@@ -27,10 +33,29 @@ function JourneyMedia({
   alt,
   ratio = "16 / 10",
   narrow = false,
+  onOpen,
 }) {
+  /* A real button when there is artwork behind it, so the keyboard and
+     assistive tech get the same way in as the pointer. */
+  const Frame = src ? "button" : "div"
+  const frameProps = src
+    ? {
+        type: "button",
+        onClick: () => onOpen({ src, alt: alt || label }),
+        "aria-label": `View ${alt || label} full size`,
+      }
+    : {}
+
   return (
     <figure className={`js-figure${narrow ? " js-figure--narrow" : ""}`}>
-      <div className="js-frame" style={{ aspectRatio: ratio }}>
+      {/* --frame-ratio hands the same ratio to CSS as a number it can do
+          arithmetic with, so the height cap can be held by capping width —
+          see .js-frame */}
+      <Frame
+        className={`js-frame${src ? " js-frame--zoom" : ""}`}
+        style={{ aspectRatio: ratio, "--frame-ratio": ratio }}
+        {...frameProps}
+      >
         {src ? (
           <img src={src} alt={alt || label} loading="lazy" decoding="async" />
         ) : (
@@ -59,13 +84,60 @@ function JourneyMedia({
             <span className="js-placeholder-label">{label}</span>
           </div>
         )}
-      </div>
+      </Frame>
       {caption && <figcaption className="js-caption">{caption}</figcaption>}
     </figure>
   )
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Lightbox — one image over the page, on the prototype modal's backdrop
+
+   Portalled to the body: as a child of .cs-page it would pick up the card
+   grid's top margin, which a fixed box with inset 0 reads as an offset.
+   ────────────────────────────────────────────────────────────── */
+function Lightbox({ image, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose()
+    /* the page behind must not scroll while the overlay owns the screen */
+    const previous = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    window.addEventListener("keydown", onKey)
+    return () => {
+      document.body.style.overflow = previous
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [onClose])
+
+  return createPortal(
+    <div
+      className="cs-stage"
+      role="dialog"
+      aria-modal="true"
+      aria-label={image.alt}
+      onClick={onClose}
+    >
+      <ModalCloseButton onClose={onClose} label="Close image" />
+      {/* The image is the panel — as a flex child of the fixed backdrop it
+          has a definite box to size against, so it fills the screen without
+          being cropped or letterboxed inside a wrapper. */}
+      <img
+        className="cs-stage-modal js-lightbox-img"
+        src={image.src}
+        alt={image.alt}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body,
+  )
+}
+
 export default function CaseStudyJourney({ steps, slots = {} }) {
+  const [lightbox, setLightbox] = useState(null)
+  /* stable, so the lightbox's key/scroll-lock effect isn't torn down and
+     rebuilt on every render of the page */
+  const closeLightbox = useCallback(() => setLightbox(null), [])
+
   return (
     <>
       {steps.map((step, i) => {
@@ -110,7 +182,7 @@ export default function CaseStudyJourney({ steps, slots = {} }) {
                   }`}
                 >
                   {step.media.map((m) => (
-                    <JourneyMedia key={m.label} {...m} />
+                    <JourneyMedia key={m.label} {...m} onOpen={setLightbox} />
                   ))}
                 </div>
               )}
@@ -118,6 +190,10 @@ export default function CaseStudyJourney({ steps, slots = {} }) {
           </section>
         )
       })}
+
+      {lightbox && (
+        <Lightbox image={lightbox} onClose={closeLightbox} />
+      )}
     </>
   )
 }

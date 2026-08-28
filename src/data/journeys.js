@@ -24,7 +24,14 @@ export const marketplaceJourney = [
       {
         label: "Early concept",
         caption: "First concept made in figma",
-        ratio: "16 / 10",
+        ratio: "45 / 32",
+        src: "/marketplace-frames/concept.webp",
+      },
+      {
+        label: "Early concept – Sidebar",
+        caption: "First Concept – Sidebar",
+        ratio: "45 / 32",
+        src: "/marketplace-frames/concept-sidebar.webp",
       },
     ],
   },
@@ -39,14 +46,21 @@ export const marketplaceJourney = [
     media: [
       {
         label: "Annotated problem map",
-        caption: "Where the controls collided with the grid",
-        ratio: "16 / 10",
+        caption: "Desktop Design Problem Annotations",
+        ratio: "45 / 32",
+        src: "/marketplace-frames/concept-annotation.webp",
+      },
+      {
+        label: "Annotated problems – Mobile",
+        caption: "Mobile Design Problem Annotations",
+        ratio: "16 / 35",
+        src: "/marketplace-frames/concept-annotation-mobile.webp",
       },
     ],
   },
   {
     title: "Research",
-    lead: "The layout questions were settled in Figma before any of it was built — full screens rather than components in isolation, so each decision could be judged against a real wall of images instead of a blank artboard.",
+    lead: "The layout questions were settled in Figma before any of it was built.",
     points: [
       "Category navigation as a panel that pushes the grid aside rather than covering it",
       "Filter and cart as overlays anchored to the control that opened them",
@@ -74,12 +88,12 @@ export const marketplaceJourney = [
   },
   {
     title: "Solution",
-    lead: "The prototype is the result, running for real. The sidebar slides in beside the grid instead of over it, filter and cart open as bubbles from the control you pressed, and the slider changes how many pieces sit in a row — every one of them leaving the wall in place behind it.",
+    lead: "The prototype is the result, running as a Proof of Concept. The sidebar slides in beside the grid instead of over it, filter and cart open as bubbles from the control you pressed, and the slider changes how many pieces sit in a row.",
     points: [
       "Collapsible category sidebar with expandable sections",
       "Filter and cart overlays that keep the grid visible",
       "Live density slider from sparse to tightly packed",
-      "Everything reachable without the wall ever leaving the screen",
+      "Everything reachable without the product wall ever being blocked",
     ],
     media: [
       {
