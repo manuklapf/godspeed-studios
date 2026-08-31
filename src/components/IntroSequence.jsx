@@ -220,8 +220,21 @@ export default function IntroSequence({ onReveal, onComplete }) {
     return () => clearTimeout(id)
   }, [playClick])
 
+  /* Click is a shortcut through the same two beats a scroll walks: the first
+     brings line two in, the second plays the pointer. It drives `progress`,
+     the one value both beats are read off — the opacity is derived from it
+     every render, so assigning to that on its own would be painted over by
+     the next one. */
+  const handleClick = useCallback(() => {
+    if (playingRef.current) return
+    const next = progressRef.current < LINE_TWO_OUT ? LINE_TWO_OUT : 1
+    progressRef.current = next
+    setProgress(next)
+    if (next >= 1) playClick()
+  }, [playClick])
+
   return (
-    <div className="intro" ref={rootRef}>
+    <div className="intro" ref={rootRef} onClick={handleClick}>
       <div
         className="intro-type"
         ref={typeRef}

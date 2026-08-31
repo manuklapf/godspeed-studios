@@ -44,6 +44,8 @@ function introAlreadySeen() {
 function markIntroSeen() {
   try {
     sessionStorage.setItem(INTRO_SEEN_KEY, "1")
+    // reset scroll position
+    window.scrollTo(0, 0)
   } catch {
     /* storage unavailable — the intro just plays again, which is harmless */
   }
