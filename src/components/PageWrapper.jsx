@@ -2,6 +2,9 @@ import React, { useEffect, useLayoutEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Navbar from "./Navbar"
 
+/* Hidden for now — flip back to true to restore "Back to the Garden" */
+const SHOW_BACK_BUTTON = false
+
 /**
  * PageWrapper — reusable shell for every page reached from the beanstalk scene.
  * Handles:
@@ -40,9 +43,11 @@ export default function PageWrapper({ children }) {
       <div className={`beanstalk-page${visible ? " visible" : ""}`}>
         <Navbar />
         {children}
-        <button className="page-back-btn" onClick={handleBack}>
-          <span className="page-back-arrow">← </span>Back to the Garden
-        </button>
+        {SHOW_BACK_BUTTON && (
+          <button className="page-back-btn" onClick={handleBack}>
+            <span className="page-back-arrow">← </span>Back to the Garden
+          </button>
+        )}
       </div>
     </>
   )
