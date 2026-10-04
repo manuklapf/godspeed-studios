@@ -16,8 +16,8 @@ export const marketplaceJourney = [
     title: "Idea",
     lead: "A resale marketplace where the clothes do the talking. Online shopping is mostly visual and impulsive so the interface should get out of the way and let a wall of garments carry the browsing.",
     points: [
-      "Peer-to-peer resale, simple layout, one product at a time",
-      "Image-first: the grid is the product, not a list view with pictures attached",
+      "Peer-to-peer resale, minimalist, one product at a time",
+      "Image-first, not a list view with pictures attached",
       "Everything reachable without leaving the wall",
     ],
     media: [
@@ -65,7 +65,6 @@ export const marketplaceJourney = [
       "Category navigation as a panel that pushes the grid aside rather than covering it",
       "Filter and cart as overlays anchored to the control that opened them",
       "A density control, so the reader picks how much fits on screen",
-      "Mobile explored as its own layout, not a squeezed desktop",
     ],
     /* Ratios are the artwork's native ones — .js-frame crops with
        object-fit: cover, so anything else cuts the screen off. Desktop

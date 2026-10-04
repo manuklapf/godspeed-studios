@@ -85,7 +85,8 @@ function JourneyMedia({
           </div>
         )}
       </Frame>
-      {caption && <figcaption className="js-caption">{caption}</figcaption>}
+      {/* 04.10.26: UI changes for better readability */}
+      {/* {caption && <figcaption className="js-caption">{caption}</figcaption>} */}
     </figure>
   )
 }
@@ -191,9 +192,7 @@ export default function CaseStudyJourney({ steps, slots = {} }) {
         )
       })}
 
-      {lightbox && (
-        <Lightbox image={lightbox} onClose={closeLightbox} />
-      )}
+      {lightbox && <Lightbox image={lightbox} onClose={closeLightbox} />}
     </>
   )
 }
